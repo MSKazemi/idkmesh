@@ -66,7 +66,7 @@ Primary context: [subsystem contract](../specifications/CONNECTOR_CONTROL_API_V0
 
 | Source file | Responsibility / authority limit |
 | --- | --- |
-| [`connector_control_read.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/connector_control_read.py) | Safe read-only persisted-connection projection |
+| [`connector_control_read.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/connector_control_read.py) | Safe read-only persisted-connection projection and static driver-descriptor listing |
 | [`connector_errors.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/connector_errors.py) | Typed errors and credential redaction |
 | [`connector_inspection.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/connector_inspection.py) | Offline probe/doctor/route explanation |
 | [`connector_probe.py`](https://github.com/MSKazemi/idkmesh/blob/main/idkmesh/connector_probe.py) | Normalized observational driver probe |

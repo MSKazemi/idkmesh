@@ -471,6 +471,56 @@ Supported methods:
 GET, HEAD
 ```
 
+### `GET /api/v1/connector-drivers`
+
+Authenticated, read-only listing of the static connector driver declarations
+(issue #580, slice C7-F remainder). It serves, for each driver registered in
+the registry this server can construct, only the descriptor triple `kind`,
+`driver` and `version`, ordered by kind then driver id. Today the only
+registry constructible without live provider adapters is the offline
+fake-driver registry (`build_fake_registry`, the same one `idkmesh doctor` /
+`connections inspect` use), so the envelope states `registry: "offline-fake"`
+and `live_adapters: false`: the entries are static test-double declarations,
+not evidence that any live provider adapter is installed or healthy.
+
+The route is a pure projection. It reads no store (so it answers without
+`--product-spine-store`), reads no connector configuration, and performs no
+probe, secret resolution, dispatch, or provider call; it grants no authority.
+It accepts no query parameters (`400 unexpected_query_parameters`) and any
+write method answers `405` with `Allow: GET, HEAD`. The session-token check
+precedes the handler as for every `/api/v1/` route. A registered declaration
+outside the connector kind/identifier grammar is not served and fails the
+request closed with `500 driver_record_invalid`.
+
+Representative shape (`examples/api/control-tower-connector-drivers-response.example.json`):
+
+```json
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-connector-drivers-response",
+  "ok": true,
+  "registry": "offline-fake",
+  "live_adapters": false,
+  "drivers": [
+    {"kind": "agent", "driver": "fake-agent", "version": "0.1"},
+    {"kind": "execution", "driver": "fake-execution", "version": "0.1"},
+    {"kind": "model", "driver": "fake-model", "version": "0.1"},
+    {"kind": "scm", "driver": "fake-scm", "version": "0.1"}
+  ]
+}
+```
+
+Frozen by `schemas/idkmesh-control-tower-connector-drivers-response-v0.1.schema.json`.
+Per-driver declared capabilities are intentionally not served: they are a
+function of a connector configuration, not of the driver alone.
+
+Supported methods:
+
+```text
+GET, HEAD
+```
+
 ### `GET /api/v1/connections/{connection_id}`
 
 Authenticated, read-only inspection of one persisted connection (issue #580,
@@ -1393,6 +1443,9 @@ Stable v0.1 codes include:
   persisted connection has the id);
 - `invalid_connection_id` (`GET /api/v1/connections/{connection_id}`, 400, the
   id is outside the connector identifier grammar);
+- `driver_record_invalid` (`GET /api/v1/connector-drivers`, 500, a registered
+  driver declaration is outside the connector kind/identifier grammar; nothing
+  is served);
 - `product_spine_store_not_configured` (`GET /api/v1/runs/{run_id}`,
   `GET /api/v1/runs/{run_id}/evidence`, `GET /api/v1/runs`, `GET /api/v1/work-units`,
   `GET /api/v1/work-units/{work_unit_id}`,

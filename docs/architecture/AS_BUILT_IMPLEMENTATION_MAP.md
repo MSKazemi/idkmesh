@@ -138,6 +138,7 @@ Browser / stdlib ControlTowerClient
     -> GET /api/v1/status/openapi.json/metrics
     -> POST /api/v1/run-evidence/inspect   [compute-only, no durable write]
     -> GET /api/v1/connections, .../{id}   [read-only; no probe/secret/dispatch]
+    -> GET /api/v1/connector-drivers       [static fake-registry descriptors; no store]
     -> GET /api/v1/runs, .../attempts, .../evidence
     -> GET /api/v1/work-units, .../{id}, /projects/{id}
     -> GET /api/v1/events and /events/stream (SSE)

@@ -1,0 +1,14 @@
+{
+  "api_version": "v1",
+  "schema_version": "0.1",
+  "kind": "idkmesh-control-tower-connector-drivers-response",
+  "ok": true,
+  "registry": "offline-fake",
+  "live_adapters": false,
+  "drivers": [
+    {"kind": "agent", "driver": "fake-agent", "version": "0.1"},
+    {"kind": "execution", "driver": "fake-execution", "version": "0.1"},
+    {"kind": "model", "driver": "fake-model", "version": "0.1"},
+    {"kind": "scm", "driver": "fake-scm", "version": "0.1"}
+  ]
+}

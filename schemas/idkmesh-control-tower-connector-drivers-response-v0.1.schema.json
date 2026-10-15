@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idkmesh.org/schemas/idkmesh-control-tower-connector-drivers-response-v0.1.schema.json",
+  "title": "IDKMesh Control Tower Connector Drivers Response v0.1",
+  "description": "The success envelope returned by `GET /api/v1/connector-drivers`: the static, secret-free driver descriptors (kind, driver id, version) of the registry the server can construct. `registry` names that registry and `live_adapters` is always false: today only the offline fake-driver registry exists, so the entries are not evidence that any live provider adapter is installed. Reading the listing performs no probe, secret resolution, dispatch, or provider call, and grants no execution authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version",
+    "schema_version",
+    "kind",
+    "ok",
+    "registry",
+    "live_adapters",
+    "drivers"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "v1"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "kind": {
+      "const": "idkmesh-control-tower-connector-drivers-response"
+    },
+    "ok": {
+      "const": true
+    },
+    "registry": {
+      "const": "offline-fake"
+    },
+    "live_adapters": {
+      "const": false
+    },
+    "drivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "driver",
+          "version"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "agent",
+              "execution",
+              "model",
+              "scm"
+            ]
+          },
+          "driver": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$(?!\n)"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      }
+    }
+  }
+}

@@ -77,7 +77,9 @@ LIBRARY_ONLY_STORE_CODES = frozenset(
 
 # Catalog codes whose exact live trigger is a corrupt connector row; the
 # handler's mapping is read from source instead of being reproduced.
-STATIC_ONLY_CODES = frozenset({"connection_record_invalid"})
+STATIC_ONLY_CODES = frozenset(
+    {"connection_record_invalid", "driver_record_invalid"}
+)
 
 
 def _rows(text: str) -> list[list[str]]:

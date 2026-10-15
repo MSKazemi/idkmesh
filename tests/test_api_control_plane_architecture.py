@@ -80,6 +80,7 @@ def test_single_api_namespace_and_current_converged_read_surfaces_are_catalogued
         "/api/v1/status:",
         "/api/v1/connections:",
         "/api/v1/connections/{connection_id}:",
+        "/api/v1/connector-drivers:",
         "/api/v1/runs:",
         "/api/v1/runs/{run_id}:",
         "/api/v1/runs/{run_id}/attempts:",

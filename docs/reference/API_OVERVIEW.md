@@ -53,6 +53,7 @@ The authoritative list is the OpenAPI document (see
 | `GET /api/v1/projects/{project_id}` | one project summary | `get_project()` |
 | `GET /api/v1/connections` | secret-free connector metadata | `list_connections()` |
 | `GET /api/v1/connections/{connection_id}` | one secret-free connector resource; no probe, secret resolution or provider call | `get_connection()` |
+| `GET /api/v1/connector-drivers` | static, secret-free connector driver declarations of the offline fake-driver registry; no store, probe, secret resolution or provider call | `list_connector_drivers()` |
 | `GET /api/v1/events` | keyset-paginated event list | `list_events()` |
 | `GET /api/v1/events/stream` | Server-Sent Events | `stream_events()` |
 | `GET /healthz`, `GET /readyz` | liveness and readiness, no token | not wrapped |

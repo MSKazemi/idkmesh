@@ -68,6 +68,9 @@ domain specification that emits them, not by these two schemas.
   `schemas/idkmesh-control-tower-project-response-v0.1.schema.json`. Its
   `runs_by_state` is zero-filled with every canonical run state, as the
   resource contract requires.
+- `control-tower-connector-drivers-response.example.json` — the success envelope
+  returned by `GET /api/v1/connector-drivers`, validated against
+  `schemas/idkmesh-control-tower-connector-drivers-response-v0.1.schema.json`.
 - `control-tower-connection-response.example.json` — the success envelope
   returned by `GET /api/v1/connections/{connection_id}`, validated against
   `schemas/idkmesh-control-tower-connection-response-v0.1.schema.json`.
