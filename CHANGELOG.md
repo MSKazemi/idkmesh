@@ -26,6 +26,7 @@ and the release notes for that tag.
   onto the runner, nothing applies or schedules retention, and there is no HTTP route or
   network-profile adapter; issue stays open. See
   [API Storage Profiles](docs/specifications/API_STORAGE_PROFILES_V0_1.md#command-line).
+- github: offline Pages-disabled fallback bundle (C14-H, refs #609). New `idkmesh/github_pages_fallback_bundle.py` and `idkmesh pages-fallback` render the same validated public-safe projections that `pages-site` renders as HTML into a self-contained directory of escaped Markdown, the byte-identical public JSON, per-run outage locators and a SHA-256 `MANIFEST.json`. Output is deterministic and fails closed; untrusted identifiers are entity-escaped against Markdown/HTML/autolink/mention/Liquid injection; the writer refuses traversal, symlinks and non-empty targets and never replaces anything; `--verify DIR` checks the file set, digests and a byte-for-byte re-render. No upload, network, GitHub call or workflow change, and the bundle is a view, not canonical evidence. Wiring an Actions-artifact upload and an outage drill remain open. See [the fallback procedure](docs/operations/GITHUB_PAGES_FALLBACK_V0_1.md).
 - Bootstrap into another checkout (refs #596): `idkmesh init --github --check|--apply` gains
   `--target DIR` (default: current directory). The target must be an existing, non-symlink directory
   with a `.git` marker; `--dry-run` rejects it; no `--force` exists, so conflicting files are
