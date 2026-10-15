@@ -406,6 +406,12 @@ class CatalogLiveTests(_ServerCase):
             finally:
                 tiny.sse_limiter.release()
 
+        def metrics_unavailable():
+            with mock.patch("idkmesh.control_tower_ui.SERVICE_NAME", 'bad"label'):
+                return get(
+                    server, "/api/v1/metrics/prometheus", accept="text/plain"
+                )
+
         def shutting_down():
             draining.drain(timeout=2.0)
             return get(draining, "/api/v1/runs")
@@ -483,6 +489,7 @@ class CatalogLiveTests(_ServerCase):
             "not_product_spine_cli_run": lambda: get(
                 server, "/api/v1/runs/y-foreign-github"
             ),
+            "metrics_unavailable": metrics_unavailable,
             "overloaded": overloaded,
             "too_many_streams": too_many_streams,
             "shutting_down": shutting_down,

@@ -139,6 +139,7 @@ Use a fresh empty `results/` output directory for each `local-loop` run; existin
 | GET | `/api/v1/status` | Runtime capabilities/limits |
 | GET | `/api/v1/openapi.json` | Machine-readable **running** API definition |
 | GET | `/api/v1/metrics` | Fixed-cardinality privacy-safe metrics |
+| GET | `/api/v1/metrics/prometheus` | The same metrics as Prometheus text exposition 0.0.4 (`text/plain; version=0.0.4; charset=utf-8`); session token required, no query string, `Accept` must allow `text/plain` |
 | POST | `/api/v1/run-evidence/inspect` | Strict validation and projection of supplied report (no persistent mutation) |
 | GET | `/api/v1/connections` | Secret-free persisted connector summaries |
 | GET | `/api/v1/connections/{connection_id}` | One secret-free connector summary (no probe, no secret resolution, no authority) |

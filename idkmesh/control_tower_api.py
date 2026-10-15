@@ -770,6 +770,7 @@ def _status_document_base() -> dict[str, Any]:
             "status": "GET /api/v1/status",
             "openapi": "GET /api/v1/openapi.json",
             "metrics": "GET /api/v1/metrics",
+            "metrics_prometheus": "GET /api/v1/metrics/prometheus",
             "inspect_run_evidence": "POST /api/v1/run-evidence/inspect",
             "list_runs": "GET /api/v1/runs",
             "list_connections": "GET /api/v1/connections",
@@ -934,6 +935,34 @@ def openapi_document() -> dict[str, Any]:
                                         )
                                     }
                                 },
+                            },
+                        },
+                        "403": {
+                            "description": "Invalid local session token"
+                        },
+                    },
+                }
+            },
+            "/api/v1/metrics/prometheus": {
+                "get": {
+                    "summary": (
+                        "Read the aggregate metrics as Prometheus text"
+                    ),
+                    "description": (
+                        "Prometheus text exposition 0.0.4 of the same "
+                        "snapshot as /api/v1/metrics: closed label set, "
+                        "latency in seconds, bounded size, no payload, "
+                        "identity or secret labels. Requires the local "
+                        "session token and accepts no query string."
+                    ),
+                    "security": [{"LocalSessionToken": []}],
+                    "responses": {
+                        "200": {
+                            "description": "Prometheus text exposition",
+                            "content": {
+                                "text/plain": {
+                                    "schema": {"type": "string"}
+                                }
                             },
                         },
                         "403": {

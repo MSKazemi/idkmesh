@@ -87,6 +87,7 @@ are in [service limits](API_LIMITS.md).
 | `evidence_not_available` | 404 | no | the run exists but retains no evidence report | not an error in the run; there is nothing to fetch |
 | `evidence_integrity_error` | 500 | no | the retained report no longer matches the run's `evidence_report_digest`; the report is never served | treat the store as damaged; do not retry |
 | `store_error` | 500 | no | the local store is locked, unreadable or corrupt, or cannot be opened | inspect the store file; do not assume a retry will help |
+| `metrics_unavailable` | 500 | no | `GET /api/v1/metrics/prometheus` could not render the exposition safely (an unsafe service label or an over-size body); nothing is emitted | operator fault, not a caller fault; use `GET /api/v1/metrics` and inspect the service configuration |
 | `persisted_state_corrupt` | 400 | no | a stored run row fails its own consistency checks (digest, projection or state disagree) | repair or recreate the store. This is a server-side fault answered with a `400` today, so branch on the code, not the status class |
 | `not_product_spine_cli_run` | 400 | no | `GET /api/v1/runs/{run_id}` named a row in the shared runs table that is not a Product Spine run (for example a GitHub dispatch record) | use a Product Spine run ID |
 | `connection_record_invalid` | 500 | no | `GET /api/v1/connections` or `GET /api/v1/connections/{connection_id}` met a stored connector row that fails validation | repair the connector store |

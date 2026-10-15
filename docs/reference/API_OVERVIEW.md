@@ -43,6 +43,7 @@ The authoritative list is the OpenAPI document (see
 | `GET /api/v1/status` | capability status and the limits in force | `status()` |
 | `GET /api/v1/openapi.json` | the running API definition | `get_openapi()` |
 | `GET /api/v1/metrics` | fixed-cardinality operational metrics | `get_metrics()` |
+| `GET /api/v1/metrics/prometheus` | the same snapshot as Prometheus text exposition 0.0.4 (token required, no query string) | not wrapped (scrape target) |
 | `POST /api/v1/run-evidence/inspect` | inspect an evidence report you supply | `inspect_run_evidence()` |
 | `GET /api/v1/runs` | list runs (filters, cursor) | `list_runs()`, `iter_runs()` |
 | `GET /api/v1/runs/{run_id}` | one run | `get_run()` |

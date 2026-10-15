@@ -33,6 +33,11 @@ from idkmesh.control_tower_api import (
     success_document,
 )
 from idkmesh.connector_store import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
+from idkmesh.otel_metrics import (
+    PROMETHEUS_TEXT_CONTENT_TYPE,
+    OtlpMetricsInputError,
+    render_prometheus_bytes,
+)
 from idkmesh.local_ui_security import (
     HOST,
     MAX_BODY_BYTES,
@@ -564,6 +569,7 @@ def _resolve_token() -> str:
 
 
 _EVENT_STREAM_PATH = f"/api/{API_VERSION}/events/stream"
+_PROMETHEUS_PATH = f"/api/{API_VERSION}/metrics/prometheus"
 _EVENT_FILTERS = ("project_id", "run_id", "work_unit_id", "event_type")
 _EVENT_BATCH = 200
 
@@ -794,6 +800,9 @@ def _handler(
                 # ADR-0023: the SSE endpoint is the one place a client
                 # legitimately asks for text/event-stream.
                 accepted |= {"text/*", "text/event-stream"}
+            if self._access_path() == _PROMETHEUS_PATH:
+                # The scrape route is text only: JSON-only callers get 406.
+                accepted = {"*/*", "text/*", "text/plain"}
             for media_type, quality in _accept_entries(accept):
                 if quality == 0.0:
                     continue
@@ -804,8 +813,12 @@ def _handler(
                 error_document(
                     "not_acceptable",
                     (
-                        "response must be accepted as application/json or "
-                        f"{V1_MEDIA_TYPE}"
+                        "response must be accepted as text/plain"
+                        if self._access_path() == _PROMETHEUS_PATH
+                        else (
+                            "response must be accepted as application/json "
+                            f"or {V1_MEDIA_TYPE}"
+                        )
                     ),
                 ),
             )
@@ -1721,6 +1734,52 @@ def _handler(
                 )
                 return None
 
+        def _prometheus_response(self, *, head_only: bool) -> None:
+            """Serve the aggregate metrics as Prometheus text exposition 0.0.4.
+
+            Same token, Accept and stray-query gates as the sibling routes
+            (already applied by the caller). The body is the closed-label,
+            size-bounded rendering of the same snapshot as ``/metrics``; any
+            render failure is a constant 500 that never echoes the cause.
+            """
+            try:
+                body = render_prometheus_bytes(
+                    self.server.metrics.document(
+                        service=SERVICE_NAME,
+                        service_version=__version__,
+                        in_flight_requests=self.server.limiter.in_flight,
+                        max_concurrent_requests=(
+                            self.server.limiter.max_concurrent
+                        ),
+                        event_stream_clients=(
+                            self.server.sse_limiter.in_flight
+                        ),
+                        max_event_stream_clients=(
+                            self.server.sse_limiter.max_concurrent
+                        ),
+                        product_spine_store_configured=(
+                            product_spine_store_path is not None
+                        ),
+                    )
+                )
+            except (OtlpMetricsInputError, ValueError):
+                self._send_json(
+                    500,
+                    error_document(
+                        "metrics_unavailable",
+                        "metrics exposition could not be rendered safely",
+                    ),
+                    head_only=head_only,
+                )
+                return
+            self._headers(
+                200,
+                PROMETHEUS_TEXT_CONTENT_TYPE,
+                len(body),
+            )
+            if not head_only and self.command != "HEAD":
+                self.wfile.write(body)
+
         def _event_list_response(self, query: str, *, head_only: bool) -> None:
             parsed_query = self._parse_list_query(
                 query,
@@ -1989,6 +2048,9 @@ def _handler(
                     head_only=head_only,
                 )
                 return
+            if path == _PROMETHEUS_PATH:
+                self._prometheus_response(head_only=head_only)
+                return
             if path == f"/api/{API_VERSION}/run-evidence/inspect":
                 self._method_not_allowed("POST", head_only=head_only)
                 return
@@ -2093,6 +2155,7 @@ def _handler(
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/metrics",
+                _PROMETHEUS_PATH,
                 f"/api/{API_VERSION}/runs",
                 f"/api/{API_VERSION}/connections",
                 f"/api/{API_VERSION}/work-units",
@@ -2160,6 +2223,7 @@ def _handler(
                 f"/api/{API_VERSION}/status",
                 f"/api/{API_VERSION}/openapi.json",
                 f"/api/{API_VERSION}/metrics",
+                _PROMETHEUS_PATH,
                 f"/api/{API_VERSION}/runs",
                 f"/api/{API_VERSION}/connections",
                 f"/api/{API_VERSION}/work-units",

@@ -93,6 +93,7 @@ document currently advertises these exact endpoints:
 | `GET /api/v1/status` | capability, endpoint, media-type, and runtime-limit discovery |
 | `GET /api/v1/openapi.json` | dependency-free OpenAPI discovery |
 | `GET /api/v1/metrics` | privacy-safe aggregate service metrics |
+| `GET /api/v1/metrics/prometheus` | the same aggregate metrics as Prometheus text exposition 0.0.4 |
 | `POST /api/v1/run-evidence/inspect` | validate and render one Run Evidence Report without selecting a candidate |
 | `GET /api/v1/connections` | list persisted public-safe connector metadata with opaque keyset pagination |
 | `GET /api/v1/connections/{connection_id}` | read one persisted public-safe connector resource; no probe, secret resolution or dispatch |

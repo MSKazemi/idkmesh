@@ -92,6 +92,25 @@ paths:
                 $ref: "#/components/schemas/idkmesh-api-operational-metrics-v0.1"
         "403":
           $ref: "#/components/responses/Forbidden"
+  /api/v1/metrics/prometheus:
+    get:
+      summary: Read the aggregate metrics as Prometheus text
+      description: >
+        Prometheus text exposition 0.0.4 of the same snapshot as
+        /api/v1/metrics: closed label set, latency in seconds, bounded size,
+        no payload, identity or secret labels. Requires the local session
+        token and accepts no query string.
+      security:
+        - LocalSessionToken: []
+      responses:
+        "200":
+          description: Prometheus text exposition
+          content:
+            text/plain:
+              schema:
+                type: string
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/openapi.json:
     get:
       summary: Read this OpenAPI contract
