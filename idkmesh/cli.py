@@ -573,6 +573,56 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    pages_fallback = sub.add_parser(
+        "pages-fallback",
+        help="write or verify the offline Markdown evidence bundle (Pages disabled)",
+        description=(
+            "C14-H fallback for when GitHub Pages is disabled or unavailable. "
+            "Validate C14-D public-safe evidence projections and write a "
+            "self-contained offline bundle (escaped Markdown, the public JSON, "
+            "and a MANIFEST.json of SHA-256 digests) to a new local directory, "
+            "or re-verify an existing bundle with --verify. Nothing is "
+            "uploaded or published: there is no network or GitHub call, no "
+            "workflow is changed, and the bundle is a view rather than "
+            "canonical evidence. The output directory must not exist or be "
+            "empty and is never replaced."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh pages-fallback --repository owner/name"
+            " --projection run-1.json --out fallback\n"
+            "  idkmesh pages-fallback --verify fallback --json"
+        ),
+    )
+    pages_fallback.add_argument(
+        "--repository",
+        metavar="OWNER/NAME",
+        help="the public repository every projection must be for (write mode)",
+    )
+    pages_fallback.add_argument(
+        "--projection",
+        nargs="+",
+        metavar="PATH",
+        help="one or more C14-D public evidence projection JSON files (write mode)",
+    )
+    pages_fallback.add_argument(
+        "--out",
+        metavar="DIR",
+        help="new or empty local output directory (write mode)",
+    )
+    pages_fallback.add_argument(
+        "--verify",
+        metavar="DIR",
+        help="verify an existing bundle directory read-only instead of writing",
+    )
+    pages_fallback.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     release_provenance = sub.add_parser(
         "release-provenance",
         help="print release metadata/provenance for public-safe projections",
@@ -3302,6 +3352,82 @@ def _run_pages_site(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_pages_fallback(args: argparse.Namespace) -> int:
+    """Write or verify the C14-H offline fallback bundle (local files only)."""
+
+    from idkmesh.github_pages_fallback_bundle import (
+        render_github_pages_fallback_bundle,
+        verify_github_pages_fallback_dir,
+        write_github_pages_fallback_bundle,
+    )
+    from idkmesh.github_pages_site import MAX_RUNS
+
+    verifying = args.verify is not None
+    if verifying:
+        if args.repository or args.projection or args.out:
+            return _fail(
+                "--verify cannot be combined with --repository, --projection or --out"
+            )
+    elif not (args.repository and args.projection and args.out):
+        return _fail(
+            "write mode needs --repository, --projection and --out "
+            "(or use --verify DIR)"
+        )
+    try:
+        if verifying:
+            report = verify_github_pages_fallback_dir(args.verify)
+            location = args.verify
+        else:
+            if len(args.projection) > MAX_RUNS:
+                return _fail(f"at most {MAX_RUNS} projections may be bundled")
+            projections = [_strict_json_file(item) for item in args.projection]
+            files = render_github_pages_fallback_bundle(
+                projections, repository=args.repository
+            )
+            report = write_github_pages_fallback_bundle(files, args.out)
+            location = args.out
+    except ValueError as exc:
+        return _fail(str(exc))
+
+    if args.json_output:
+        print(
+            json.dumps(
+                {
+                    "kind": "idkmesh-github-pages-fallback-"
+                    + ("verify" if verifying else "write"),
+                    "schema_version": "0.1",
+                    "repository": report.repository,
+                    "directory": location,
+                    "run_count": report.run_count,
+                    "total_bytes": report.total_bytes,
+                    "files": [
+                        {"path": path, "size_bytes": size, "sha256": digest}
+                        for path, size, digest in report.files
+                    ],
+                    "verified": True,
+                    "uploaded": False,
+                    "published": False,
+                    "github_mutation_performed": False,
+                    "network_access": False,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+
+    print(
+        f"GitHub Pages fallback bundle "
+        f"{'verified' if verifying else 'written'}: {location}"
+    )
+    print(f"repository: {report.repository}")
+    print(f"runs: {report.run_count}")
+    print(f"files: {len(report.files)} ({report.total_bytes} bytes)")
+    print("uploaded: no (local directory only)")
+    print("GitHub mutations: no")
+    return 0
+
+
 def _run_release_provenance(args: argparse.Namespace) -> int:
     """Build and print the C14-F release metadata record; nothing is created."""
 
@@ -3483,6 +3609,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_work(args)
     if args.command == "pages-site":
         return _run_pages_site(args)
+    if args.command == "pages-fallback":
+        return _run_pages_fallback(args)
     if args.command == "release-provenance":
         return _run_release_provenance(args)
     if args.command == "github-authority-audit":

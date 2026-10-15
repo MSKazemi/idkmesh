@@ -114,7 +114,8 @@ Pages is a publication surface, never a mutation or approval surface. Dispatch,
 verification, human decision, canonical-state write, Git push, integration, and
 merge authority are all absent. Pages being disabled or unavailable must not
 affect coordination; the canonical ledger and the GitHub issue/PR/Actions
-surfaces remain the source of truth (fallback behavior is C14-H).
+surfaces remain the source of truth (the offline fallback is C14-H, see
+[the fallback procedure](../operations/GITHUB_PAGES_FALLBACK_V0_1.md)).
 
 The caller, not this module, must establish that the repository and data are
 public before building the C14-D projections.

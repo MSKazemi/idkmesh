@@ -85,12 +85,14 @@ def _require(condition: bool, message: str) -> None:
         raise GitHubPagesWriteError(message)
 
 
-def _validate_file_map(files: Mapping[str, str]) -> dict[str, bytes]:
+def _validate_file_map(
+    files: Mapping[str, str], *, max_files: int = MAX_FILES
+) -> dict[str, bytes]:
     """Return ``path -> UTF-8 bytes`` or raise before any filesystem access."""
 
     _require(isinstance(files, Mapping), "file map must be a mapping")
     _require(bool(files), "file map is empty")
-    _require(len(files) <= MAX_FILES, f"at most {MAX_FILES} files may be written")
+    _require(len(files) <= max_files, f"at most {max_files} files may be written")
     encoded: dict[str, bytes] = {}
     folded: set[str] = set()
     total = 0

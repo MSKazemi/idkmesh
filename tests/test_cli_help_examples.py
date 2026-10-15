@@ -31,6 +31,7 @@ EXAMPLE_COMMANDS = (
     ("run", "cancel"),
     ("control-tower",),
     ("pages-site",),
+    ("pages-fallback",),
     ("release-provenance",),
     ("github-authority-audit",),
     ("connections", "validate"),

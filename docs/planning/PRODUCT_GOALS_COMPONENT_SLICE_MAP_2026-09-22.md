@@ -637,7 +637,7 @@ independent human review.
   `idkmesh pages-site` (`idkmesh/github_pages_writer.py`) writes that map to a
   local directory all-or-nothing, refusing path traversal, symlinks, and
   unrecognised non-empty directories without `--force`. The publishing
-  workflow and outage fallback remain open (C14-H).
+  workflow remains open; the offline fallback is C14-H.
 - **C14-F — pilot release metadata/provenance.** Metadata record implemented by
   `idkmesh/github_release_provenance.py`
   ([contract](../specifications/GITHUB_RELEASE_PROVENANCE_V0_1.md)) and
@@ -657,7 +657,16 @@ independent human review.
   attestation support, and wiring it into a release workflow; the existing
   `publish-pypi.yml` attestation of built distributions is independent of this
   module.
-- **C14-H — no-GitHub-Pages fallback behavior.**
+- **C14-H — no-GitHub-Pages fallback behavior.** Partly implemented.
+  `build_github_pages_outage_fallback()` in `idkmesh/github_pages_site.py`
+  returns an offline locator for one run, and `idkmesh pages-fallback`
+  (`idkmesh/github_pages_fallback_bundle.py`,
+  [procedure](../operations/GITHUB_PAGES_FALLBACK_V0_1.md)) renders the same
+  public-safe projections as an escaped-Markdown + JSON bundle with a SHA-256
+  manifest, verifiable by digest and by byte-for-byte re-render. Local files
+  only: no upload, no workflow change. **Still open:** a reviewed workflow that
+  runs it and uploads the directory as an Actions artifact, and an owner-run
+  outage drill.
 
 **C14 exit gate:** one run is understandable from normal GitHub surfaces.
 
