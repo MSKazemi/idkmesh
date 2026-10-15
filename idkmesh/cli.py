@@ -1379,6 +1379,252 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    storage_cmd = sub.add_parser(
+        "api-storage",
+        help="plan or run API storage migrations, retention planning and backups",
+        description=(
+            "Operate on the API's durable local SQLite stores (issue #750; "
+            "docs/specifications/API_STORAGE_PROFILES_V0_1.md). Every verb that "
+            "could write is a dry run unless --apply is given. 'plan-retention' "
+            "only plans: it never deletes anything and nothing schedules it. No "
+            "verb reads or prints a credential, contacts a network, or grants "
+            "execution, acceptance, repository-write or merge authority. Exit "
+            "codes: 0 success; 1 an integrity finding (backup or manifest does "
+            "not match its digest, edited migration history); 2 a refused or "
+            "unusable request. Failures print one 'error: CODE: message' line "
+            "(a JSON object on stderr with --json), never a traceback."
+        ),
+    )
+    storage_sub = storage_cmd.add_subparsers(
+        dest="api_storage_command",
+        required=True,
+    )
+
+    def _storage_json(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--json",
+            action="store_true",
+            dest="json_output",
+            help="emit deterministic machine-readable JSON",
+        )
+
+    def _storage_migrations(p: argparse.ArgumentParser) -> None:
+        p.add_argument("database", metavar="DATABASE", help="SQLite database path")
+        p.add_argument(
+            "--migrations",
+            required=True,
+            metavar="DIR",
+            help=(
+                "directory of forward-only steps named NNNN_name.sql, "
+                "numbered contiguously from 0001"
+            ),
+        )
+        p.add_argument(
+            "--adopt-existing",
+            action="store_true",
+            help=(
+                "treat a database that has a user_version but no migration "
+                "ledger as already at that version (recorded only with --apply)"
+            ),
+        )
+        _storage_json(p)
+
+    sm_plan = storage_sub.add_parser(
+        "plan-migrations",
+        help="show which migration steps would run (read-only)",
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-storage plan-migrations state.sqlite"
+            " --migrations migrations/\n"
+            "  idkmesh api-storage plan-migrations state.sqlite"
+            " --migrations migrations/ --json"
+        ),
+    )
+    _storage_migrations(sm_plan)
+
+    sm_apply = storage_sub.add_parser(
+        "apply-migrations",
+        help="apply pending migration steps in one transaction (dry run by default)",
+        description=(
+            "Without --apply this prints the same plan as 'plan-migrations' "
+            "and writes nothing. With --apply every pending step, its "
+            "checksummed ledger row and user_version commit in one "
+            "transaction or not at all. Edited history, a ledger gap, a "
+            "newer database and an unadopted legacy schema are refused. "
+            "No existing IDKMesh store is moved onto this runner by default."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-storage apply-migrations state.sqlite"
+            " --migrations migrations/\n"
+            "  idkmesh api-storage apply-migrations state.sqlite"
+            " --migrations migrations/ --apply --json"
+        ),
+    )
+    _storage_migrations(sm_apply)
+    sm_apply.add_argument(
+        "--apply",
+        action="store_true",
+        help="really modify the database (default: dry run)",
+    )
+
+    sr_plan = storage_sub.add_parser(
+        "plan-retention",
+        help="classify records as keep or expire; deletes nothing",
+        description=(
+            "Read a JSON list of records (record_id, record_class, "
+            "created_at with a timezone, optional run_id and "
+            "evidence_digest) and print keep/expire decisions. Essential and "
+            "configuration records are always kept, and so is any record "
+            "whose run_id or evidence_digest a Human Decision refers to. "
+            "You must say where decisions live (--decisions-store, which "
+            "must exist) or explicitly opt out (--assume-no-decisions): an "
+            "unreadable or mistyped store is never treated as 'unreferenced'. "
+            "This verb only plans; applying a plan is a separate, manual step."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-storage plan-retention --records records.json"
+            " --expendable-days 30 --ephemeral-days 7"
+            " --decisions-store decisions.sqlite\n"
+            "  idkmesh api-storage plan-retention --records records.json"
+            " --expendable-days 30 --ephemeral-days 7"
+            " --assume-no-decisions --json"
+        ),
+    )
+    sr_plan.add_argument(
+        "--records",
+        required=True,
+        metavar="FILE",
+        help="JSON file: a list of records, or an object with a 'records' list",
+    )
+    sr_plan.add_argument(
+        "--expendable-days",
+        required=True,
+        type=int,
+        metavar="N",
+        help="age limit in days for the expendable class (positive integer)",
+    )
+    sr_plan.add_argument(
+        "--ephemeral-days",
+        required=True,
+        type=int,
+        metavar="N",
+        help="age limit in days for the ephemeral class (positive integer)",
+    )
+    decisions = sr_plan.add_mutually_exclusive_group(required=True)
+    decisions.add_argument(
+        "--decisions-store",
+        metavar="PATH",
+        help="Human Decision SQLite file whose references are never expired",
+    )
+    decisions.add_argument(
+        "--assume-no-decisions",
+        action="store_true",
+        help="plan as if no Human Decision exists (explicit opt-out)",
+    )
+    sr_plan.add_argument(
+        "--now",
+        metavar="TIMESTAMP",
+        help="ISO-8601 timestamp with a timezone (default: the current UTC time)",
+    )
+    _storage_json(sr_plan)
+
+    sb = storage_sub.add_parser(
+        "backup",
+        help="snapshot a SQLite database with a digest manifest (dry run by default)",
+        description=(
+            "Take an online-consistent snapshot of SOURCE into BACKUP and "
+            "write BACKUP.manifest.json beside it (SHA-256, size, schema "
+            "version, row counts). Without --apply only the path checks run. "
+            "An existing backup or manifest, a symlink and a missing parent "
+            "directory are refused."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-storage backup state.sqlite backups/state-1.sqlite\n"
+            "  idkmesh api-storage backup state.sqlite backups/state-1.sqlite"
+            " --apply --json"
+        ),
+    )
+    sb.add_argument("source", metavar="SOURCE", help="SQLite database to copy")
+    sb.add_argument("backup", metavar="BACKUP", help="new backup file to create")
+    sb.add_argument(
+        "--apply", action="store_true", help="really write the backup (default: dry run)"
+    )
+    _storage_json(sb)
+
+    sv = storage_sub.add_parser(
+        "verify-backup",
+        help="check a backup against its manifest (read-only)",
+        description=(
+            "Recompute the backup's digest, size, integrity check, schema "
+            "version and row counts and compare them with its manifest. Exit "
+            "1 on any mismatch. A digest detects corruption and accidental "
+            "substitution, not a writer who can rewrite both files."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-storage verify-backup backups/state-1.sqlite\n"
+            "  idkmesh api-storage verify-backup backups/state-1.sqlite --json"
+        ),
+    )
+    sv.add_argument("backup", metavar="BACKUP", help="backup file to verify")
+    sv.add_argument(
+        "--manifest",
+        metavar="PATH",
+        help="manifest path (default: BACKUP.manifest.json)",
+    )
+    sv.add_argument(
+        "--max-schema-version",
+        type=int,
+        metavar="N",
+        help="refuse a backup whose schema version is newer than N",
+    )
+    _storage_json(sv)
+
+    srs = storage_sub.add_parser(
+        "restore",
+        help="restore a verified backup to a new path (dry run by default)",
+        description=(
+            "Verify BACKUP against its manifest, then copy it to TARGET "
+            "atomically. TARGET must not exist: this verb never overwrites; "
+            "move an existing database aside first. A symlink target or a "
+            "missing parent directory is refused. Without --apply only "
+            "verification and the target checks run."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh api-storage restore backups/state-1.sqlite"
+            " restored.sqlite\n"
+            "  idkmesh api-storage restore backups/state-1.sqlite"
+            " restored.sqlite --apply --json"
+        ),
+    )
+    srs.add_argument("backup", metavar="BACKUP", help="backup file to restore from")
+    srs.add_argument("target", metavar="TARGET", help="new database path to create")
+    srs.add_argument(
+        "--manifest",
+        metavar="PATH",
+        help="manifest path (default: BACKUP.manifest.json)",
+    )
+    srs.add_argument(
+        "--max-schema-version",
+        type=int,
+        metavar="N",
+        help="refuse a backup whose schema version is newer than N",
+    )
+    srs.add_argument(
+        "--apply", action="store_true", help="really write TARGET (default: dry run)"
+    )
+    _storage_json(srs)
+
     gui = sub.add_parser(
         "gate-audit-ui",
         help="open the local browser interface for gate-audit",
@@ -2402,6 +2648,234 @@ def _run_events_control(args: argparse.Namespace) -> int:
     return 0
 
 
+_STORAGE_INTEGRITY_CODES = frozenset({
+    "backup_corrupt",
+    "backup_digest_mismatch",
+    "checksum_mismatch",
+    "ledger_gap",
+    "ledger_version_mismatch",
+    "manifest_digest_mismatch",
+    "manifest_invalid",
+})
+_STORAGE_MAX_RECORDS_BYTES = 16 * 1024 * 1024
+
+
+def _storage_error(code: str, message: str, *, json_output: bool) -> int:
+    """One-line failure: exit 1 for integrity findings, 2 for refused requests."""
+    if json_output:
+        print(
+            json.dumps(
+                {"ok": False, "error": {"code": code, "message": message}},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            file=sys.stderr,
+        )
+    else:
+        print(f"error: {code}: {message}", file=sys.stderr)
+    return 1 if code in _STORAGE_INTEGRITY_CODES else 2
+
+
+def _storage_path(value: str, what: str) -> Path:
+    """Accept a path argument only if it is non-empty, NUL-free and not a symlink."""
+    from idkmesh.api_storage_ops import StorageOpsError
+
+    if not value or "\x00" in value:
+        raise StorageOpsError("unsafe_path", f"{what} is not a usable path")
+    path = Path(value)
+    if path.is_symlink():
+        raise StorageOpsError("unsafe_path", f"{what} must not be a symlink")
+    return path
+
+
+def _storage_records(path: Path) -> list:
+    from idkmesh.api_storage_ops import RetentionRecord, StorageOpsError
+
+    try:
+        if not path.is_file():
+            raise StorageOpsError("invalid_records", "records path is not a regular file")
+        if path.stat().st_size > _STORAGE_MAX_RECORDS_BYTES:
+            raise StorageOpsError("invalid_records", "records file is too large")
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise StorageOpsError("invalid_records", "records file is not readable JSON") from exc
+    if isinstance(document, dict):
+        if set(document) != {"records"}:
+            raise StorageOpsError("invalid_records", "object form allows only a 'records' key")
+        document = document["records"]
+    if not isinstance(document, list):
+        raise StorageOpsError("invalid_records", "records must be a list")
+    required = {"record_id", "record_class", "created_at"}
+    allowed = required | {"run_id", "evidence_digest"}
+    records = []
+    for index, item in enumerate(document):
+        if (
+            not isinstance(item, dict)
+            or not required <= set(item)
+            or not set(item) <= allowed
+            or not all(isinstance(v, str) for v in item.values())
+        ):
+            raise StorageOpsError(
+                "invalid_records",
+                f"record {index} must be an object of string fields {sorted(required)} "
+                "plus optional run_id and evidence_digest",
+            )
+        records.append(RetentionRecord(**item))
+    return records
+
+
+def _storage_decision_references(path_value: str):
+    from idkmesh.api_storage_ops import StorageOpsError, decision_references_from_store
+
+    path = _storage_path(path_value, "decisions store")
+    if not path.is_file():
+        raise StorageOpsError(
+            "store_error",
+            "decisions store does not exist; pass --assume-no-decisions to plan "
+            "without one",
+        )
+    return decision_references_from_store(path)
+
+
+def _run_api_storage(args: argparse.Namespace) -> int:
+    import sqlite3
+
+    from idkmesh import api_storage_ops as ops
+
+    json_output = args.json_output
+    command = args.api_storage_command
+    apply = bool(getattr(args, "apply", False))
+    try:
+        result: dict[str, object]
+        if command in ("plan-migrations", "apply-migrations"):
+            database = _storage_path(args.database, "database")
+            steps = ops.load_migration_steps(_storage_path(args.migrations, "migrations"))
+            if command == "apply-migrations" and apply:
+                if not database.parent.is_dir():
+                    raise ops.StorageOpsError(
+                        "unsafe_path", "database parent directory must already exist")
+                plan = ops.apply_migrations(
+                    database, steps, adopt_existing=args.adopt_existing)
+            else:
+                plan = ops.plan_migrations(
+                    database, steps, adopt_existing=args.adopt_existing)
+            result = {"plan": plan.to_dict()}
+            summary = (
+                f"schema version {plan.current_version} -> {plan.target_version}: "
+                f"{len(plan.pending)} step(s) "
+                f"{'applied' if command == 'apply-migrations' and apply else 'pending'}"
+                + (f", {len(plan.adopt)} adopted" if plan.adopt else "")
+            )
+        elif command == "plan-retention":
+            records = _storage_records(_storage_path(args.records, "records"))
+            references = (
+                ops.DecisionReferences()
+                if args.assume_no_decisions
+                else _storage_decision_references(args.decisions_store)
+            )
+            now = args.now or _observation_time(None)
+            decided = ops.evaluate_retention(
+                records,
+                {"expendable": args.expendable_days, "ephemeral": args.ephemeral_days},
+                now=now,
+                references=references,
+            )
+            expired = sorted(d.record_id for d in decided if d.action == "expire")
+            result = {
+                "now": now,
+                "counts": {"expire": len(expired), "keep": len(decided) - len(expired)},
+                "decisions": [
+                    {"record_id": d.record_id, "action": d.action, "reason": d.reason}
+                    for d in decided
+                ],
+                "applied": False,
+            }
+            summary = (
+                f"{len(expired)} record(s) would expire, "
+                f"{len(decided) - len(expired)} kept; nothing was deleted"
+            )
+        elif command == "backup":
+            source = _storage_path(args.source, "source")
+            backup = _storage_path(args.backup, "backup")
+            if apply:
+                manifest = ops.create_backup(source, backup)
+                report = ops.verify_backup(backup, manifest=manifest)
+                result = {
+                    "backup": str(backup),
+                    "manifest": str(manifest),
+                    "backup_digest": report.backup_digest,
+                    "database_schema_version": report.database_schema_version,
+                }
+                summary = f"backup written: {backup} ({report.backup_digest})"
+            else:
+                result = dict(ops.plan_backup(source, backup))
+                summary = f"would write backup {backup} and {result['manifest']}"
+        elif command in ("verify-backup", "restore"):
+            backup = _storage_path(args.backup, "backup")
+            manifest_arg = (
+                _storage_path(args.manifest, "manifest") if args.manifest else None
+            )
+            if command == "verify-backup":
+                report = ops.verify_backup(
+                    backup,
+                    manifest=manifest_arg,
+                    max_supported_schema_version=args.max_schema_version,
+                )
+                summary = f"backup verified: {report.backup_digest}"
+            else:
+                target = _storage_path(args.target, "target")
+                restore = ops.restore_backup if apply else ops.plan_restore
+                report = restore(
+                    backup,
+                    target,
+                    manifest=manifest_arg,
+                    max_supported_schema_version=args.max_schema_version,
+                )
+                summary = (
+                    f"restored to {target}" if apply
+                    else f"backup verified; would restore to {target}"
+                )
+            result = {
+                "backup_digest": report.backup_digest,
+                "database_schema_version": report.database_schema_version,
+                "row_counts": dict(sorted(report.row_counts.items())),
+            }
+        else:  # pragma: no cover - argparse enforces this
+            return 2
+    except ops.StorageOpsError as exc:
+        return _storage_error(exc.code, exc.message, json_output=json_output)
+    except (OSError, ValueError, sqlite3.Error) as exc:
+        reason = _reason(exc) if isinstance(exc, OSError) else type(exc).__name__
+        return _storage_error(
+            "storage_request_failed",
+            f"request could not be completed: {reason}",
+            json_output=json_output,
+        )
+
+    mutating = command in ("apply-migrations", "backup", "restore")
+    if json_output:
+        print(
+            json.dumps(
+                {
+                    "kind": "idkmesh-api-storage-result",
+                    "schema_version": "0.1",
+                    "command": command,
+                    "dry_run": mutating and not apply,
+                    "result": result,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+    print(("dry run: " if mutating and not apply else "") + summary)
+    if command == "plan-retention":
+        for item in result["decisions"]:  # type: ignore[union-attr]
+            if item["action"] == "expire":
+                print(f"expire\t{item['record_id']}\t{item['reason']}")
+    return 0
+
+
 def _run_enterprise_conformance(args: argparse.Namespace) -> int:
     from idkmesh.enterprise_conformance import run_conformance
 
@@ -3019,6 +3493,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_work_unit_control(args)
     if args.command == "events":
         return _run_events_control(args)
+    if args.command == "api-storage":
+        return _run_api_storage(args)
     if args.command == "project":
         return _run_project_control(args)
     if args.command == "local-loop":

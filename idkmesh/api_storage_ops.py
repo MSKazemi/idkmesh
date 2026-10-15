@@ -98,6 +98,53 @@ class MigrationPlan:
         }
 
 
+MAX_MIGRATION_FILES = 1000
+MAX_MIGRATION_BYTES = 1 << 20
+_MIGRATION_FILE = re.compile(r"^([0-9]{4})_([a-z0-9][a-z0-9_]*)\.sql$")
+
+
+def load_migration_steps(directory: str | Path) -> tuple[MigrationStep, ...]:
+    """Read ``NNNN_name.sql`` files from a directory as ordered migration steps.
+
+    Fail closed: every ``*.sql`` entry must be a regular, non-symlink UTF-8 file
+    named ``NNNN_name.sql`` (lower-case ``name``), and the numbers must run
+    contiguously from ``0001``. Other file types are ignored. Only reads.
+    """
+
+    root = Path(directory)
+    if root.is_symlink() or not root.is_dir():
+        raise StorageOpsError("invalid_migrations", "migrations path is not a directory")
+    try:
+        entries = sorted(e for e in root.iterdir() if e.name.endswith(".sql"))
+    except OSError as exc:
+        raise StorageOpsError(
+            "invalid_migrations", f"cannot list migrations: {exc.strerror}"
+        ) from exc
+    if len(entries) > MAX_MIGRATION_FILES:
+        raise StorageOpsError("invalid_migrations", "too many migration files")
+    steps: list[MigrationStep] = []
+    for entry in entries:
+        match = _MIGRATION_FILE.match(entry.name)
+        if match is None:
+            raise StorageOpsError(
+                "invalid_migrations", f"{entry.name!r} is not named NNNN_name.sql"
+            )
+        if entry.is_symlink() or not entry.is_file():
+            raise StorageOpsError(
+                "invalid_migrations", f"{entry.name!r} is not a regular file"
+            )
+        try:
+            if entry.stat().st_size > MAX_MIGRATION_BYTES:
+                raise StorageOpsError("invalid_migrations", f"{entry.name!r} is too large")
+            text = entry.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            raise StorageOpsError(
+                "invalid_migrations", f"cannot read {entry.name!r} as UTF-8 text"
+            ) from exc
+        steps.append(MigrationStep(int(match.group(1)), match.group(2), text))
+    return _validate_steps(steps)
+
+
 def _validate_steps(steps: Sequence[MigrationStep]) -> tuple[MigrationStep, ...]:
     if not steps:
         raise StorageOpsError("invalid_migrations", "at least one migration step is required")
@@ -510,14 +557,10 @@ def _refuse_symlink(path: Path, what: str) -> None:
         raise StorageOpsError("unsafe_path", f"{what} must not be a symlink")
 
 
-def create_backup(source: str | Path, destination: str | Path) -> Path:
-    """Take an online-consistent snapshot and write a digest manifest beside it.
-
-    Refuses to overwrite an existing backup or manifest. The snapshot is built
-    under a temporary name and only renamed into place after it passes an
-    integrity check, so an interrupted backup never looks complete. Returns the
-    manifest path.
-    """
+def _check_backup_paths(
+    source: str | Path, destination: str | Path
+) -> tuple[Path, Path, Path]:
+    """Validate a backup's paths without writing; return ``(source, backup, manifest)``."""
 
     src = Path(source)
     dest = Path(destination)
@@ -532,6 +575,26 @@ def create_backup(source: str | Path, destination: str | Path) -> Path:
         raise StorageOpsError("unsafe_path", "backup parent directory must already exist")
     if dest.resolve(strict=False) == src.resolve(strict=False):
         raise StorageOpsError("unsafe_path", "cannot back up a database onto itself")
+    return src, dest, manifest
+
+
+def plan_backup(source: str | Path, destination: str | Path) -> dict[str, str]:
+    """Dry run of :func:`create_backup`: run every path check, write nothing."""
+
+    src, dest, manifest = _check_backup_paths(source, destination)
+    return {"source": str(src), "backup": str(dest), "manifest": str(manifest)}
+
+
+def create_backup(source: str | Path, destination: str | Path) -> Path:
+    """Take an online-consistent snapshot and write a digest manifest beside it.
+
+    Refuses to overwrite an existing backup or manifest. The snapshot is built
+    under a temporary name and only renamed into place after it passes an
+    integrity check, so an interrupted backup never looks complete. Returns the
+    manifest path.
+    """
+
+    src, dest, manifest = _check_backup_paths(source, destination)
 
     partial = dest.with_name(dest.name + ".partial")
     partial.unlink(missing_ok=True)
@@ -658,6 +721,38 @@ def verify_backup(
     return BackupReport(digest, facts["schema_version"], facts["row_counts"])
 
 
+def _check_restore_target(target_path: Path, replace: bool) -> Path:
+    """Validate a restore target without writing; return the staging path."""
+
+    _refuse_symlink(target_path, "restore target")
+    if target_path.exists() and not replace:
+        raise StorageOpsError("target_exists", "restore target exists; pass replace=True")
+    if not target_path.parent.is_dir():
+        raise StorageOpsError("unsafe_path", "restore target directory must already exist")
+    staging = target_path.with_name(target_path.name + ".restoring")
+    _refuse_symlink(staging, "staging path")
+    return staging
+
+
+def plan_restore(
+    backup: str | Path,
+    target: str | Path,
+    *,
+    manifest: str | Path | None = None,
+    replace: bool = False,
+    max_supported_schema_version: int | None = None,
+) -> BackupReport:
+    """Dry run of :func:`restore_backup`: verify the backup and the target, write nothing."""
+
+    report = verify_backup(
+        backup,
+        manifest=manifest,
+        max_supported_schema_version=max_supported_schema_version,
+    )
+    _check_restore_target(Path(target), replace)
+    return report
+
+
 def restore_backup(
     backup: str | Path,
     target: str | Path,
@@ -683,13 +778,7 @@ def restore_backup(
         manifest=manifest,
         max_supported_schema_version=max_supported_schema_version,
     )
-    _refuse_symlink(target_path, "restore target")
-    if target_path.exists() and not replace:
-        raise StorageOpsError("target_exists", "restore target exists; pass replace=True")
-    if not target_path.parent.is_dir():
-        raise StorageOpsError("unsafe_path", "restore target directory must already exist")
-    staging = target_path.with_name(target_path.name + ".restoring")
-    _refuse_symlink(staging, "staging path")
+    staging = _check_restore_target(target_path, replace)
     staging.unlink(missing_ok=True)
     try:
         shutil.copyfile(backup_path, staging)

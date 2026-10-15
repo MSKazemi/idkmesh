@@ -13,6 +13,19 @@ and the release notes for that tag.
 ## [Unreleased]
 
 - github: `idkmesh github-authority-audit` runs the C10 authority-alignment audit on local files (refs #598). `--bindings` takes an `enterprise-github-identity-binding` table (parsed by the real `parse_identity_binding_table`), `--trusted-actors` a new `idkmesh-github-dispatch-trusted-actors` document (parsed by `parse_dispatch_trusted_actors_document`, which delegates every semantic check to `GitHubDispatchAuthorizationPolicy`); optional `--scope TENANT/PROJECT`, `--now-epoch N` and `--json`. Strictly read-only (no network, secret, clock read or write) and never prints login text, including in input errors. Exit 0 with no `error` finding, 1 with at least one, 2 with empty stdout for an unreadable or invalid input; JSON is compact with sorted keys. No workflow or CI step is added: wiring the audit into CI is a separate reviewed change. See the [alignment spec](docs/specifications/GITHUB_AUTHORITY_ALIGNMENT_V0_1.md). Tests: `tests/test_github_authority_audit_cli.py`, `tests/test_cli_help_examples.py`.
+- API storage CLI (refs #750): new `idkmesh api-storage` verb group over `idkmesh/api_storage_ops.py`:
+  `plan-migrations`, `apply-migrations`, `plan-retention`, `backup`, `verify-backup` and `restore`.
+  Anything that could write is a dry run unless `--apply` is given. `restore` never overwrites an
+  existing target and refuses symlinks; `plan-retention` only plans (it needs `--decisions-store` or an
+  explicit `--assume-no-decisions`, so a typo cannot make decided evidence look unreferenced).
+  Exit codes: 0 ok, 1 integrity finding (digest, manifest, edited migration history), 2 refused or
+  unusable request; failures are one `error: CODE: message` line (or a JSON object with `--json`),
+  never a traceback. Library additions: `load_migration_steps()` (`NNNN_name.sql` directories),
+  `plan_backup()` and `plan_restore()` dry runs that share the real path checks.
+  `tests/test_api_storage_cli.py` drives the real CLI against temp dirs. No existing store is moved
+  onto the runner, nothing applies or schedules retention, and there is no HTTP route or
+  network-profile adapter; issue stays open. See
+  [API Storage Profiles](docs/specifications/API_STORAGE_PROFILES_V0_1.md#command-line).
 - Bootstrap into another checkout (refs #596): `idkmesh init --github --check|--apply` gains
   `--target DIR` (default: current directory). The target must be an existing, non-symlink directory
   with a `.git` marker; `--dry-run` rejects it; no `--force` exists, so conflicting files are
