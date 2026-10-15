@@ -37,6 +37,7 @@ EXAMPLE_COMMANDS = (
     ("egress-policy", "check"),
     ("secret-reference", "check"),
     ("api-network-profile", "check"),
+    ("break-glass", "check"),
     ("connections", "validate"),
     ("connections", "list"),
     ("connections", "import"),
