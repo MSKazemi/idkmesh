@@ -53,12 +53,72 @@ contradicts or cannot back that authority):
 report's `to_dict()` always carries `"grants_authority": false`, and findings
 carry actor ids, never login text.
 
+## Command line
+
+```bash
+idkmesh github-authority-audit --bindings bindings.json \
+  --trusted-actors trusted-actors.json \
+  [--scope TENANT/PROJECT] [--now-epoch N] [--json]
+```
+
+The verb is a thin file front end over `audit_dispatch_authority_alignment`.
+It reads exactly the two named files (regular files, at most 2 MiB, strict
+UTF-8 JSON, duplicate keys and `NaN`/`Infinity` rejected) and writes nothing:
+no network, no GitHub call, no secret, no output file, and no clock read. Expiry
+is checked only when `--now-epoch` is given and scope only when `--scope` is
+given, exactly as in the library. The authorization policy is always the
+enterprise baseline.
+
+| Exit | Meaning |
+|---|---|
+| `0` | No `error` finding (`warning` findings may be present) |
+| `1` | At least one `error` finding; the report is still printed |
+| `2` | A file is missing, unreadable or invalid, or a flag is invalid; stdout is empty and `error: ...` goes to stderr |
+
+`--json` prints the report's `to_dict()` as compact JSON with sorted keys and a
+trailing newline, so equal inputs give byte-identical output. Without it a short
+text summary is printed. Neither form contains login text: findings carry the
+numeric actor id, and if a loader message would contain a login that appears in
+the supplied files it is replaced by `<login>`.
+
+`--bindings` is the table documented in
+[Enterprise authorization](ENTERPRISE_AUTHORIZATION_V0_1.md) (schema
+`schemas/enterprise-github-identity-binding-v0.1.schema.json`), parsed by the
+real `parse_identity_binding_table`.
+
+`--trusted-actors` is a plain-data serialisation of
+`GitHubDispatchAuthorizationPolicy`. No repository-configured trusted-actor
+file existed before this verb (the policy was only constructed in code), so
+this document is the format the command reads; the repository does not ship an
+instance of it. It is parsed by `parse_dispatch_trusted_actors_document`, which
+rejects unknown fields and delegates role vocabulary, unique ids and logins,
+the `owner/name` repository form and non-empty lists to the dataclass itself:
+
+```json
+{
+  "kind": "idkmesh-github-dispatch-trusted-actors",
+  "schema_version": "0.1",
+  "repository": "owner/name",
+  "dispatch_labels": ["agent-ready"],
+  "trusted_actors": [
+    {"actor_id": 1001, "login": "maintainer-login", "role": "owner"}
+  ],
+  "allowed_roles": ["owner", "maintainer"],
+  "allowed_installation_ids": [12345]
+}
+```
+
+`allowed_roles` and `allowed_installation_ids` are optional and default as in
+the dataclass. There is no JSON Schema for this document yet.
+
 ## Boundaries
 
 - An aligned report is evidence about configuration consistency, not an
   authorization decision. Both gates must still permit an action.
-- Nothing calls this audit at runtime yet; a maintainer or CI job must run it
-  against the reviewed configurations. No such job exists in this change.
+- Nothing calls this audit at runtime, and no workflow or CI job runs it. A
+  maintainer can run it by hand with `idkmesh github-authority-audit` (below);
+  wiring it into CI is a separate reviewed change because workflows are a
+  protected area (see `docs/reference/GITHUB_ACTIONS_CODE_MAP.md`).
 - It does not link principals across identity providers, does not read
   CODEOWNERS or repository rulesets, and does not verify that executor
   provenance fed to the `verify` separation-of-duties rule is trustworthy;

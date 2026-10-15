@@ -646,6 +646,63 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    authority_audit = sub.add_parser(
+        "github-authority-audit",
+        help="audit that the GitHub identity binding table and dispatch trusted list agree",
+        description=(
+            "Compare a reviewed enterprise GitHub identity binding table "
+            "(E3-B) with a reviewed C5 dispatch trusted-actor list (C10) and "
+            "report every divergence: unbound, login-mismatched, wrong-kind, "
+            "revoked, expired or out-of-scope trusted actors, and actors that "
+            "can cross the label dispatch gate without a dispatch role. "
+            "Strictly read-only: it reads the two files you name, makes no "
+            "network or GitHub call, resolves no secret, writes nothing and "
+            "never prints login text (findings name numeric actor ids). A "
+            "clean report is evidence of configuration consistency, not an "
+            "authorization decision. Exit 0: no error finding (warnings "
+            "allowed); exit 1: at least one error finding; exit 2: an input "
+            "file is unreadable or invalid."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh github-authority-audit --bindings bindings.json"
+            " --trusted-actors trusted-actors.json\n"
+            "  idkmesh github-authority-audit --bindings bindings.json"
+            " --trusted-actors trusted-actors.json --scope tenant-a/project-main"
+            " --now-epoch 1760000000 --json"
+        ),
+    )
+    authority_audit.add_argument(
+        "--bindings",
+        required=True,
+        metavar="PATH",
+        help="enterprise-github-identity-binding table JSON (schemas/enterprise-github-identity-binding-v0.1.schema.json)",
+    )
+    authority_audit.add_argument(
+        "--trusted-actors",
+        required=True,
+        metavar="PATH",
+        help="C5 dispatch trusted-actor document JSON (kind idkmesh-github-dispatch-trusted-actors)",
+    )
+    authority_audit.add_argument(
+        "--scope",
+        metavar="TENANT/PROJECT",
+        help="also require each trusted actor's binding to cover this scope",
+    )
+    authority_audit.add_argument(
+        "--now-epoch",
+        type=int,
+        metavar="N",
+        help="UNIX seconds used for the expiry check (never read from the clock; omitted means no expiry check)",
+    )
+    authority_audit.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     connections = sub.add_parser(
         "connections",
         help="validate, list, import, store, or inspect connector configuration",
@@ -1953,7 +2010,9 @@ def _run_control_error(exc, *, json_output: bool) -> int:
     return _fail(f"{code}: {exc}")
 
 
-def _strict_json_file(path_value: str) -> dict[str, object]:
+def _strict_json_file(
+    path_value: str, *, label: str = "run projection"
+) -> dict[str, object]:
     class DuplicateKeyError(ValueError):
         pass
 
@@ -1976,32 +2035,32 @@ def _strict_json_file(path_value: str) -> dict[str, object]:
     try:
         if not stat.S_ISREG(path.stat().st_mode):
             raise ValueError(
-                f"run projection is not a regular file: {path_value}"
+                f"{label} is not a regular file: {path_value}"
             )
         with path.open("rb") as handle:
             payload = handle.read(MAX_BODY_BYTES + 1)
     except FileNotFoundError as exc:
         raise ValueError(
-            f"run projection not found: {path_value}"
+            f"{label} not found: {path_value}"
         ) from exc
     except IsADirectoryError as exc:
         raise ValueError(
-            f"run projection is a directory: {path_value}"
+            f"{label} is a directory: {path_value}"
         ) from exc
     except OSError as exc:
         raise ValueError(
-            f"cannot read run projection {path_value}: {_reason(exc)}"
+            f"cannot read {label} {path_value}: {_reason(exc)}"
         ) from exc
 
     if len(payload) > MAX_BODY_BYTES:
         raise ValueError(
-            "run projection exceeds the 2 MiB local input limit"
+            f"{label} exceeds the 2 MiB local input limit"
         )
     try:
         text = payload.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise ValueError(
-            f"{path_value}: run projection is not UTF-8"
+            f"{path_value}: {label} is not UTF-8"
         ) from exc
     try:
         value = json.loads(
@@ -2020,7 +2079,7 @@ def _strict_json_file(path_value: str) -> dict[str, object]:
         ) from exc
     if not isinstance(value, dict):
         raise ValueError(
-            "run projection JSON must be an object"
+            f"{label} JSON must be an object"
         )
     return value
 
@@ -2821,6 +2880,77 @@ def _run_release_provenance(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_github_authority_audit(args: argparse.Namespace) -> int:
+    """Run the C10 alignment audit on two local files; nothing is changed.
+
+    Exit 0 when there is no ``error`` finding, 1 when there is at least one,
+    2 when an input is unreadable or invalid (stdout stays empty then).
+    """
+
+    from idkmesh.enterprise_identity_github import parse_identity_binding_table
+    from idkmesh.github_authority_alignment import (
+        audit_dispatch_authority_alignment,
+        parse_dispatch_trusted_actors_document,
+        render_alignment_report_json,
+        render_alignment_report_text,
+    )
+    from idkmesh.tenant_scope import TenantScope
+
+    known_logins: set[str] = set()
+
+    def redact(message: str) -> str:
+        # Defence in depth: a loader message must never carry a login the
+        # operator's own files contain, even by accident.
+        for login in sorted(known_logins, key=len, reverse=True):
+            message = message.replace(login, "<login>")
+        return message
+
+    def collect_logins(items: object) -> None:
+        if isinstance(items, list):
+            for item in items:
+                login = item.get("login") if isinstance(item, dict) else None
+                if isinstance(login, str) and login.strip():
+                    known_logins.add(login.strip())
+
+    scope = None
+    if args.scope is not None:
+        tenant, separator, project = args.scope.partition("/")
+        try:
+            if not separator:
+                raise ValueError("--scope must be TENANT/PROJECT")
+            scope = TenantScope(tenant, project)
+        except ValueError as exc:
+            return _fail(f"invalid --scope: {exc}")
+    if args.now_epoch is not None and args.now_epoch < 0:
+        return _fail("--now-epoch must be an integer >= 0")
+
+    try:
+        bindings_doc = _strict_json_file(
+            args.bindings, label="identity binding table"
+        )
+        trusted_doc = _strict_json_file(
+            args.trusted_actors, label="dispatch trusted-actor document"
+        )
+        collect_logins(bindings_doc.get("bindings"))
+        collect_logins(trusted_doc.get("trusted_actors"))
+        table = parse_identity_binding_table(bindings_doc)
+        policy = parse_dispatch_trusted_actors_document(trusted_doc)
+        report = audit_dispatch_authority_alignment(
+            table, policy, scope=scope, now_epoch=args.now_epoch
+        )
+    except ValueError as exc:
+        # Loader errors (including the authz/adapter contract errors) are
+        # ValueError subclasses with user-fixable messages.
+        return _fail(redact(str(exc)))
+
+    sys.stdout.write(
+        render_alignment_report_json(report)
+        if args.json_output
+        else render_alignment_report_text(report)
+    )
+    return 0 if report.aligned else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "control-tower":
@@ -2881,6 +3011,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_pages_site(args)
     if args.command == "release-provenance":
         return _run_release_provenance(args)
+    if args.command == "github-authority-audit":
+        return _run_github_authority_audit(args)
     if args.command == "run":
         return _run_product_spine_control(args)
     if args.command == "work-unit":

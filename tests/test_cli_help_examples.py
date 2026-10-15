@@ -32,6 +32,7 @@ EXAMPLE_COMMANDS = (
     ("control-tower",),
     ("pages-site",),
     ("release-provenance",),
+    ("github-authority-audit",),
     ("connections", "validate"),
     ("connections", "list"),
     ("connections", "import"),

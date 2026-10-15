@@ -67,6 +67,11 @@ Developer / operator
   |       -> --statement: github_release_statement.py (UNSIGNED in-toto Statement v1) -> stdout
   |       -> NO TAG, RELEASE, SIGNING, ATTESTATION, NETWORK, OR GITHUB CALL; commit/digests unverified
   |
+  +-- idkmesh github-authority-audit --bindings B --trusted-actors T [--scope S] [--now-epoch N]
+  |       -> enterprise_identity_github.parse_identity_binding_table + github_authority_alignment.py
+  |       -> parse_dispatch_trusted_actors_document -> audit_dispatch_authority_alignment -> stdout
+  |       -> READ-ONLY, NO LOGIN TEXT, NO NETWORK/WRITE; exit 0 aligned / 1 error finding / 2 bad input; no workflow runs it
+  |
   +-- idkmesh control-tower [--product-spine-store SQLite]
           -> control_tower_ui.py (127.0.0.1:8770)
           -> control_tower_api.py (strict report validation + read projection)
