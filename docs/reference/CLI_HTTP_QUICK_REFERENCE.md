@@ -47,6 +47,7 @@ The wheel intentionally installs only `idkmesh/`. Running the research-backed `l
 | `github-workflow {dispatch,verify}` | Reserved wrapper phases | Always fail closed with `dispatch_unavailable` / `verify_unavailable`; read no environment or secret |
 | `pages-site --repository OWNER/NAME --projection PATH... --out DIR [--force] [--json]` | Validate C14-D public-safe projections, render the C14-E static Pages file map, and write exactly those files to a local directory all-or-nothing | Local files only: no publication, workflow, network or GitHub call; refuses `..`/absolute/symlinked paths, a symlinked or foreign non-empty `--out` (replaced only with `--force`, never the cwd, its ancestors, home, or a `.git` directory) |
 | `release-provenance --repository OWNER/NAME --tag TAG --target-commit SHA [--artifact NAME=sha256:HEX]... [--projection PATH...] [--notes | --statement]` | Validate C14-D public-safe projections and print the C14-F release metadata/provenance record as JSON, draft release notes with `--notes`, or the unsigned C14-G in-toto Statement with `--statement` (needs at least one `--artifact`) | stdout only: no tag, GitHub Release, signing, attestation, network or GitHub call; commit and artifact digests are caller-supplied and recorded as unverified; no timestamps; exit 2 and empty stdout on any rejected input |
+| `github-authority-audit --bindings PATH --trusted-actors PATH [--scope TENANT/PROJECT] [--now-epoch N] [--json]` | Run the C10 alignment audit: compare an `enterprise-github-identity-binding` table with a C5 dispatch trusted-actor document and report unbound, login-mismatched, wrong-kind, revoked, expired, out-of-scope and unbacked trusted actors | Reads the two named files only: no network, GitHub call, secret, clock read or write; never prints login text (findings name numeric actor ids); exit 0 when no `error` finding, 1 when at least one, 2 (empty stdout) on an unreadable or invalid input; an aligned report is evidence, not an authorization decision; no workflow runs it |
 | `local-loop CONFIG [--output-dir PATH]` | Two-attempt reference orchestration and verification/evidence bundle | Checkout + `[verify]` extra; never replays or records a decision on its own |
 | `local-loop-replay BUNDLE` | Replay a saved `local-loop` bundle against the same fixtures and compare must-match vs expected-to-vary fields; same report and exit codes (0 PASS, 1 diverged, 2 unusable path) as `python experiments/replay_run.py replay` | Checkout + `[verify]` extra; writes nothing; no write, push, merge or selection authority |
 | `local-loop-record-decision EVIDENCE_REPORT --output PATH --decision-id ID --decision {accept,reject,escalate} --rationale TEXT --decider-id ID [--decider-type TYPE] [--decider-display-name NAME] [--selected-attempt-id ID] [--decided-at TS]` | Record one explicit human decision bound to the evidence-report digest; same behavior as `python experiments/record_human_decision.py record` | Checkout + `[verify]` extra; `--output` must be under `results/` and not the report; record's `canonical_state_write`, `git_push` and `merge` are `false`; integrates nothing |
@@ -87,6 +88,11 @@ idkmesh release-provenance --repository owner/name --tag v0.1.0 \
 idkmesh release-provenance --repository owner/name --tag v0.1.0 \
   --target-commit <40-hex-commit> --artifact pkg-0.1.0.tar.gz=sha256:<64-hex> \
   --projection run-1.json --statement
+
+# Audit that the identity binding table and the dispatch trusted-actor list agree; read-only,
+# exit 0 aligned, 1 error finding, 2 unusable input:
+idkmesh github-authority-audit --bindings bindings.json --trusted-actors trusted-actors.json \
+  --scope tenant-a/project-main --now-epoch 1760000000 --json
 
 # Evaluate the committed C12 fixture only; no GitHub API/admin mutation:
 idkmesh doctor --github examples/github-governance/governance-pass-v0.1.json \

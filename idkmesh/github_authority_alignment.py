@@ -25,7 +25,9 @@ gate would refuse an actor the other would admit).
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+import json
 from typing import Any
 
 from idkmesh.enterprise_authz import AuthorizationPolicy
@@ -41,6 +43,8 @@ from idkmesh.tenant_scope import TenantScope
 
 ALIGNMENT_REPORT_KIND = "idkmesh-github-authority-alignment-report"
 ALIGNMENT_REPORT_VERSION = "0.1"
+DISPATCH_TRUSTED_ACTORS_KIND = "idkmesh-github-dispatch-trusted-actors"
+DISPATCH_TRUSTED_ACTORS_VERSION = "0.1"
 
 SEVERITY_ERROR = "error"
 SEVERITY_WARNING = "warning"
@@ -352,3 +356,122 @@ def audit_dispatch_authority_alignment(
         dispatch_actors_checked=len(dispatch_policy.trusted_actors),
         bindings_checked=len(table.bindings),
     )
+
+
+_DISPATCH_DOC_REQUIRED = frozenset(
+    {"kind", "schema_version", "repository", "dispatch_labels", "trusted_actors"}
+)
+_DISPATCH_DOC_OPTIONAL = frozenset({"allowed_roles", "allowed_installation_ids"})
+_TRUSTED_ACTOR_FIELDS = frozenset({"actor_id", "login", "role"})
+
+
+def _doc_fail(code: str, path: str, message: str) -> AuthorityAlignmentError:
+    return AuthorityAlignmentError(code, path, message)
+
+
+def _array(value: Any, path: str) -> list[Any]:
+    if not isinstance(value, list):
+        raise _doc_fail("invalid_type", path, "must be an array")
+    return value
+
+
+def parse_dispatch_trusted_actors_document(
+    value: Any,
+) -> GitHubDispatchAuthorizationPolicy:
+    """Parse a maintainer-reviewed C5 trusted-actor document.
+
+    The document is a plain-data serialisation of
+    :class:`GitHubDispatchAuthorizationPolicy`; every semantic check (role
+    vocabulary, unique ids and logins, repository form, non-empty lists) is
+    delegated to that dataclass so this reader cannot drift from the gate it
+    describes. Structural problems (wrong ``kind``/``schema_version``,
+    missing or unknown fields) raise :class:`AuthorityAlignmentError`, and the
+    dataclass's own ``ValueError`` is wrapped in the same error type. It never
+    reads the environment or the network.
+    """
+
+    if not isinstance(value, Mapping):
+        raise _doc_fail("invalid_type", "$", "trusted-actor document must be an object")
+    missing = sorted(_DISPATCH_DOC_REQUIRED - set(value))
+    if missing:
+        raise _doc_fail("missing_field", "$", "missing: " + ", ".join(missing))
+    unknown = sorted(set(value) - _DISPATCH_DOC_REQUIRED - _DISPATCH_DOC_OPTIONAL)
+    if unknown:
+        raise _doc_fail("unknown_field", f"$.{unknown[0]}", "unknown field")
+    if value["kind"] != DISPATCH_TRUSTED_ACTORS_KIND:
+        raise _doc_fail(
+            "invalid_kind", "$.kind", f"must be {DISPATCH_TRUSTED_ACTORS_KIND!r}"
+        )
+    if value["schema_version"] != DISPATCH_TRUSTED_ACTORS_VERSION:
+        raise _doc_fail(
+            "unsupported_version",
+            "$.schema_version",
+            f"must be {DISPATCH_TRUSTED_ACTORS_VERSION!r}",
+        )
+
+    actors: list[TrustedGitHubActor] = []
+    for index, item in enumerate(_array(value["trusted_actors"], "$.trusted_actors")):
+        path = f"$.trusted_actors[{index}]"
+        if not isinstance(item, Mapping):
+            raise _doc_fail("invalid_type", path, "must be an object")
+        if set(item) != _TRUSTED_ACTOR_FIELDS:
+            raise _doc_fail(
+                "invalid_fields",
+                path,
+                "must contain exactly actor_id, login and role",
+            )
+        try:
+            actors.append(
+                TrustedGitHubActor(item["actor_id"], item["login"], item["role"])
+            )
+        except ValueError as exc:
+            raise _doc_fail("invalid_actor", path, str(exc)) from exc
+
+    labels = _array(value["dispatch_labels"], "$.dispatch_labels")
+    roles = _array(value["allowed_roles"], "$.allowed_roles") if (
+        "allowed_roles" in value
+    ) else None
+    installations = _array(
+        value["allowed_installation_ids"], "$.allowed_installation_ids"
+    ) if "allowed_installation_ids" in value else None
+    try:
+        kwargs: dict[str, Any] = {}
+        if roles is not None:
+            kwargs["allowed_roles"] = frozenset(roles)
+        if installations is not None:
+            kwargs["allowed_installation_ids"] = frozenset(installations)
+        return GitHubDispatchAuthorizationPolicy(
+            repository=value["repository"],
+            dispatch_labels=frozenset(labels),
+            trusted_actors=tuple(actors),
+            **kwargs,
+        )
+    except (ValueError, TypeError) as exc:
+        raise _doc_fail("invalid_policy", "$", str(exc)) from exc
+
+
+def render_alignment_report_json(report: AlignmentReport) -> str:
+    """Stable compact JSON (sorted keys, trailing newline); no login text."""
+
+    return json.dumps(report.to_dict(), sort_keys=True, separators=(",", ":")) + "\n"
+
+
+def render_alignment_report_text(report: AlignmentReport) -> str:
+    """Human-readable summary; findings name actor ids, never logins."""
+
+    errors = sum(1 for f in report.findings if f.severity == SEVERITY_ERROR)
+    warnings = len(report.findings) - errors
+    lines = [
+        "GitHub authority alignment audit",
+        f"aligned: {'yes' if report.aligned else 'no'}",
+        f"dispatch actors checked: {report.dispatch_actors_checked}",
+        f"bindings checked: {report.bindings_checked}",
+        f"findings: {len(report.findings)} ({errors} error, {warnings} warning)",
+    ]
+    for finding in report.findings:
+        lines.append(
+            f"- actor {finding.actor_id} [{finding.severity}] "
+            f"{finding.code}: {finding.message}"
+        )
+    lines.append("grants authority: no")
+    return "\n".join(lines) + "\n"
