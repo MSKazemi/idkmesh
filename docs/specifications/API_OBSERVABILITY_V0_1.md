@@ -276,6 +276,51 @@ These evaluators are not a rolling-window monitor or an alert daemon, and a
 passing result is a statement about one supplied interval only. See
 `tests/test_api_slo.py`.
 
+## Operator CLI: `idkmesh api-slo`
+
+`idkmesh api-slo check --metrics-interval PATH [--contract PATH] [--json]`
+and `idkmesh api-slo contract [--contract PATH] [--json]` apply the evaluators
+above to files on disk. They are offline and read-only: nothing is fetched from
+a server, written, sent or scheduled.
+
+`check` reads a *recording* (`-` reads standard input; at most 8 MiB):
+
+```json
+{
+  "kind": "idkmesh-api-metrics-recording",
+  "schema_version": "0.1",
+  "samples": [
+    {"process_identity": "<collector epoch>", "observed_unix_nano": 1000000000,
+     "metrics": { "...": "a GET /api/v1/metrics document" }}
+  ]
+}
+```
+
+Between 2 and 1024 samples, oldest first. The collector, not this tool, must
+attest `process_identity` and `observed_unix_nano` (see the
+[interval guide](../reference/API_METRICS_INTERVAL_GUIDE.md)). The whole
+recording, first to last sample, is the one interval judged against the three
+objectives (`evaluate_slo_interval`, so it must cover the contract window);
+consecutive pairs feed `evaluate_overload_alert`; the last snapshot feeds
+`evaluate_saturation_conditions`. The recording format is a CLI input
+convention, not a served or schema-published contract.
+
+| Exit | Meaning |
+| --- | --- |
+| 0 | every objective and saturation condition is met |
+| 1 | at least one objective is breached, the overload alert fires, or a saturation condition with `for_seconds: 0` holds |
+| 2 | unreadable or invalid input, invalid contract, or invalid flags |
+| 3 | unknown: restarted (changed process identity), regressed counters, no requests, shorter than the window, malformed snapshot, or a saturation condition that holds with a non-zero `for_seconds` (one recording does not attest a sustained duration) |
+
+`unknown` is never exit 0, and a breach outranks unknown. The overload alert is
+reported but changes the verdict only by firing, which already implies a
+breached overload objective. Structural envelope errors exit 2; untrustworthy
+*content* (a malformed snapshot, a bad timestamp) is `unknown`, exit 3.
+Output is stable sorted JSON or fixed-vocabulary text and never echoes service
+labels, process identities or input free text; file paths from argv are echoed
+only ASCII-escaped. `contract` prints the default contract or validates a
+supplied one fail-closed (exit 0 or 2). See `tests/test_api_slo_cli.py`.
+
 ## Authority
 
 Operational metrics and trace correlation are observations only. They cannot

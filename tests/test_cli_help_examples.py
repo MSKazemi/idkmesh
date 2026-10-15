@@ -59,6 +59,8 @@ EXAMPLE_COMMANDS = (
     ("api-storage", "backup"),
     ("api-storage", "verify-backup"),
     ("api-storage", "restore"),
+    ("api-slo", "check"),
+    ("api-slo", "contract"),
     ("local-loop",),
     ("local-loop-replay",),
     ("local-loop-record-decision",),
