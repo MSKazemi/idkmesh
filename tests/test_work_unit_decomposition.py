@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import experiments.work_unit_decomposition as decomposition_module
 from experiments.work_unit_decomposition import (
     BenchmarkError,
     JSONSCHEMA_AVAILABLE,
@@ -15,6 +16,7 @@ from experiments.work_unit_decomposition import (
     serialize_report,
     validate_benchmark,
 )
+from tests._schema_check_memo import memoize_check_schema
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +28,15 @@ FIXTURE = ROOT / "examples/benchmarks/work-unit-decomposition-v0.1.json"
     "Work Unit decomposition tests require requirements-phase0.txt",
 )
 class WorkUnitDecompositionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        # _schema_errors() re-runs the full metaschema check on the benchmark
+        # and work-unit schemas for every call (and once per formal unit). Each
+        # distinct schema is still meta-checked once; instances are still
+        # validated by the real validator. The CLI test runs in a subprocess
+        # and is unaffected.
+        memoize_check_schema(cls, decomposition_module)
+
     def setUp(self) -> None:
         self.benchmark = json.loads(FIXTURE.read_text(encoding="utf-8"))
 

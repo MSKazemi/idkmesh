@@ -22,6 +22,8 @@ if str(EXPERIMENTS) not in sys.path:
 import evaluator_plan_runner  # noqa: E402
 import local_verifier  # noqa: E402
 
+from tests._schema_check_memo import memoize_check_schema  # noqa: E402
+
 WORK_UNIT = ROOT / "examples/work-units/patch-verifier-smoke.work-unit.json"
 BASE_WORKER = ROOT / "examples/verifier/patch/good/result-manifest.json"
 PLAN_V04 = ROOT / "verification/fixtures/patch-transition-evaluator-plan-v0.4.json"
@@ -32,6 +34,12 @@ DECOY_PATCH = ROOT / "verification/fixtures/patch-transition/decoy.patch"
 class PatchEvaluatorTransitionV04Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        # Every verify() re-loads and re-meta-validates the same ~5 schemas 13
+        # times (local_verifier.load_schema); that repeated, deterministic
+        # check was ~95% of this class's CPU. Each distinct schema is still
+        # meta-checked once, and instances are still validated by the real
+        # validator.
+        memoize_check_schema(cls, local_verifier)
         cls.work_unit = local_verifier.load_json(WORK_UNIT)
         cls.base_worker = local_verifier.load_json(BASE_WORKER)
         cls.plan_v04 = evaluator_plan_runner.load_plan(PLAN_V04)

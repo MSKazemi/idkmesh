@@ -330,6 +330,15 @@ and the release notes for that tag.
   instead of per assertion. Mutation checks confirm each refactored guard still
   fails on the drift it exists to catch. Measured warm with `scripts/testkit.py
   unit --no-cache`: 88.6 CPU-seconds at load 3.6.
+- Test suite CPU, repo-scanning meta-tests (refs #745): the two whole-`tests/` scans
+  now parse only the files that can contain what they look for (a `pytestmark`
+  assignment, a `find_spec` call; the rest of the files cannot, by their text),
+  and the patch-evaluator transition and Work Unit decomposition tests no longer
+  re-run the identical Draft 2020-12 metaschema check on the same schema file on
+  every call (`tests/_schema_check_memo.py`: each distinct schema is still checked
+  once, failures are never cached, instances are validated by the real class). No
+  test removed, no assertion loosened, nothing moved out of the unit tier, budget
+  unchanged.
 
 - Two-attempt orchestrator adapter registration seam (refs #4, #16): add
   `register_adapter`, `unregister_adapter`, `reset_registered_adapters` and a
