@@ -95,20 +95,34 @@ ACCEPT_CORPUS = (
 )
 
 
+def _serve(cls, server):
+    """Run ``server`` for the lifetime of the test class ``cls``."""
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    def cleanup():
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    cls.addClassCleanup(cleanup)
+    return server
+
+
 class _ServerHarness(unittest.TestCase):
-    def start_server(self):
+    # One live server per class instead of one per test. The requests are
+    # stateless header probes (fixed token, no store, ``Connection: close``),
+    # so no test can change another's answer; a create/serve/shutdown cycle per
+    # test was repeated setup, not coverage.
+    @classmethod
+    def start_server(cls):
         with mock.patch.dict("os.environ", {TOKEN_ENV: TOKEN}):
             server = create_server(port=0)
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
+        return _serve(cls, server)
 
-        def cleanup():
-            server.shutdown()
-            server.server_close()
-            thread.join(timeout=2)
-
-        self.addCleanup(cleanup)
-        return server
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.server = cls.start_server()
 
     def send(self, server, method, path, headers, body=None):
         """One request with exact headers; returns (status, headers, body)."""
@@ -155,9 +169,6 @@ def _mutate(rng: random.Random, base: str) -> str:
 
 class RequestMediaTypeTests(_ServerHarness):
     """The 415 gate: case-insensitive, parameter-tolerant, fail-closed."""
-
-    def setUp(self) -> None:
-        self.server = self.start_server()
 
     def test_media_type_matching_is_case_and_whitespace_insensitive(self):
         for content_type in (
@@ -233,9 +244,6 @@ class RequestMediaTypeTests(_ServerHarness):
 
 class AcceptNegotiationTests(_ServerHarness):
     """The 406 gate and response media-type selection."""
-
-    def setUp(self) -> None:
-        self.server = self.start_server()
 
     def test_vendor_accept_matching_is_case_and_whitespace_insensitive(self):
         for accept in (
@@ -332,9 +340,6 @@ class AcceptNegotiationTests(_ServerHarness):
 
 class ContentLengthBoundaryTests(_ServerHarness):
     """411/400/413 gates: Content-Length is 1*ASCII DIGIT (RFC 9110)."""
-
-    def setUp(self) -> None:
-        self.server = self.start_server()
 
     def test_ascii_digit_lengths_reach_request_validation(self):
         for raw_length in ("2", " 2", "2 ", "02", "0002"):
@@ -433,9 +438,6 @@ class ContentLengthBoundaryTests(_ServerHarness):
 class AmbiguousFramingTests(_ServerHarness):
     """Duplicate and empty framing headers must never reach JSON parsing."""
 
-    def setUp(self) -> None:
-        self.server = self.start_server()
-
     def send_lines(self, lines):
         conn = http.client.HTTPConnection(
             "127.0.0.1", self.server.server_port, timeout=3
@@ -495,9 +497,6 @@ class AmbiguousFramingTests(_ServerHarness):
 
 class RawByteBoundaryTests(_ServerHarness):
     """Byte-level hostility: the worker survives and the server keeps serving."""
-
-    def setUp(self) -> None:
-        self.server = self.start_server()
 
     def raw_status_line(self, hostile_header_line: bytes):
         request = (
@@ -607,20 +606,11 @@ class ClientResponseMediaTypeTests(unittest.TestCase):
 class GateAuditContentLengthTests(unittest.TestCase):
     """The gate-audit UI shares the request boundary; keep it in lockstep."""
 
-    def setUp(self) -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
         # The audit UI mints its own session token; requests carry
         # server.ui_token below.
-        server = create_audit_server(port=0)
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-
-        def cleanup():
-            server.shutdown()
-            server.server_close()
-            thread.join(timeout=2)
-
-        self.addCleanup(cleanup)
-        self.server = server
+        cls.server = _serve(cls, create_audit_server(port=0))
 
     def post(self, raw_length, body=b"{}"):
         conn = http.client.HTTPConnection(

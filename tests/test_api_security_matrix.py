@@ -111,20 +111,30 @@ def _error_code(raw):
     return (json.loads(raw).get("error") or {}).get("code")
 
 
+def _serve(cls, server):
+    """Run ``server`` for the lifetime of the test class ``cls``."""
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    def cleanup():
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    cls.addClassCleanup(cleanup)
+
+
 class _Harness(unittest.TestCase):
-    def setUp(self) -> None:
+    # One live server per class instead of one per test: every request below
+    # is stateless (a fixed token, no store, no per-client counters), so no
+    # test's traffic can change another test's answer, while a server
+    # create/serve/shutdown cycle per test was pure repeated setup.
+    @classmethod
+    def setUpClass(cls) -> None:
         with mock.patch.dict("os.environ", {TOKEN_ENV: TOKEN}):
             server = create_server(port=0)
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-
-        def cleanup():
-            server.shutdown()
-            server.server_close()
-            thread.join(timeout=2)
-
-        self.addCleanup(cleanup)
-        self.port = server.server_port
+        _serve(cls, server)
+        cls.port = server.server_port
 
     def call(self, method, path, headers=None, body=None, **kwargs):
         return _exchange(self.port, method, path, headers or {}, body, **kwargs)
@@ -466,18 +476,11 @@ class CrossOriginTests(_Harness):
 class GateAuditUiSecurityTests(unittest.TestCase):
     """The audit UI shares the token and Host guards and must agree with them."""
 
-    def setUp(self) -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
         server = create_audit_server(port=0)
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-
-        def cleanup():
-            server.shutdown()
-            server.server_close()
-            thread.join(timeout=2)
-
-        self.addCleanup(cleanup)
-        self.server = server
+        _serve(cls, server)
+        cls.server = server
 
     def post(self, **kwargs):
         return _exchange(

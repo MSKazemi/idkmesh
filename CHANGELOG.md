@@ -12,6 +12,12 @@ and the release notes for that tag.
 
 ## [Unreleased]
 
+- tests: `tests/test_api_security_matrix.py` and `tests/test_api_header_boundary_fuzz.py` now start one
+  live server per test class instead of one per test (refs #745). Same 60 tests and 593 subtests, every
+  host/token/CORS/header case and every fuzz seed unchanged; the unit-tier CPU cost of the two files
+  drops from about 1.5 to about 0.95 CPU-s each (wall time from about 16 s and 12.6 s to about 4 s).
+  The requests are stateless, so no test's traffic can change another's answer.
+
 - github: `idkmesh github-authority-audit` runs the C10 authority-alignment audit on local files (refs #598). `--bindings` takes an `enterprise-github-identity-binding` table (parsed by the real `parse_identity_binding_table`), `--trusted-actors` a new `idkmesh-github-dispatch-trusted-actors` document (parsed by `parse_dispatch_trusted_actors_document`, which delegates every semantic check to `GitHubDispatchAuthorizationPolicy`); optional `--scope TENANT/PROJECT`, `--now-epoch N` and `--json`. Strictly read-only (no network, secret, clock read or write) and never prints login text, including in input errors. Exit 0 with no `error` finding, 1 with at least one, 2 with empty stdout for an unreadable or invalid input; JSON is compact with sorted keys. No workflow or CI step is added: wiring the audit into CI is a separate reviewed change. See the [alignment spec](docs/specifications/GITHUB_AUTHORITY_ALIGNMENT_V0_1.md). Tests: `tests/test_github_authority_audit_cli.py`, `tests/test_cli_help_examples.py`.
 - API storage CLI (refs #750): new `idkmesh api-storage` verb group over `idkmesh/api_storage_ops.py`:
   `plan-migrations`, `apply-migrations`, `plan-retention`, `backup`, `verify-backup` and `restore`.
