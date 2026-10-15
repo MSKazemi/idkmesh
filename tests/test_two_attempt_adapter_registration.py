@@ -22,6 +22,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 if importlib.util.find_spec("jsonschema") is None:
     raise unittest.SkipTest(
@@ -33,6 +34,7 @@ EXPERIMENTS = ROOT / "experiments"
 if str(EXPERIMENTS) not in sys.path:
     sys.path.insert(0, str(EXPERIMENTS))
 
+import local_verifier  # noqa: E402
 import replay_run  # noqa: E402
 import run_evidence_report  # noqa: E402
 import two_attempt_orchestrator as orch  # noqa: E402
@@ -68,6 +70,31 @@ class ToyMirrorAdapter:
             result_manifest_path=orch.resolve_repo_path(spec["result_manifest"]),
             candidate_root=orch.resolve_repo_path(spec["candidate_root"]),
         )
+
+
+_SCHEMA_CACHE: dict[tuple[str, int, int], dict[str, Any]] = {}
+
+
+def _load_schema_checked_once(path: Path) -> dict[str, Any]:
+    """``local_verifier.load_schema`` that meta-validates each schema file once.
+
+    ``load_schema`` runs ``Draft202012Validator.check_schema`` on every call and
+    every verification loads three schemas, so ~87% of this file's CPU was the
+    same unchanged repository schemas being re-checked against the metaschema
+    (measured with cProfile). The first load of a given file state still goes
+    through the real ``load_schema`` (parse + ``check_schema``); only repeat
+    loads of an unchanged file reuse the result. Instance validation, which is
+    what these tests exercise, still runs in full on every call.
+    """
+
+    stat = Path(path).stat()
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    if key not in _SCHEMA_CACHE:
+        _SCHEMA_CACHE[key] = _REAL_LOAD_SCHEMA(path)
+    return _SCHEMA_CACHE[key]
+
+
+_REAL_LOAD_SCHEMA = local_verifier.load_schema
 
 
 def toy_config() -> dict[str, Any]:
@@ -121,6 +148,12 @@ def builtin_record() -> dict[str, Any]:
 
 
 class AdapterRegistrationTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.enterClassContext(
+            mock.patch.object(local_verifier, "load_schema", _load_schema_checked_once)
+        )
+
     def setUp(self) -> None:
         orch.reset_registered_adapters()
         self.addCleanup(orch.reset_registered_adapters)

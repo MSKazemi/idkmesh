@@ -35,11 +35,34 @@ import shutil
 import unittest
 import uuid
 from pathlib import Path
+from unittest import mock
 
 from idkmesh.cli import main as cli_main
 from idkmesh.local_loop import _load_experiments
 
-canonical_digest = _load_experiments()["replay_run"].canonical_digest
+_EXPERIMENTS = _load_experiments()
+canonical_digest = _EXPERIMENTS["replay_run"].canonical_digest
+_local_verifier = _EXPERIMENTS["local_verifier"]
+_REAL_LOAD_SCHEMA = _local_verifier.load_schema
+_SCHEMA_CACHE: dict[tuple[str, int, int], dict[str, object]] = {}
+
+
+def _load_schema_checked_once(path: Path) -> dict[str, object]:
+    """``local_verifier.load_schema`` that meta-validates each schema file once.
+
+    ``load_schema`` re-runs ``Draft202012Validator.check_schema`` on every call
+    and each verification loads three schemas, so most of this file's CPU was
+    the same unchanged repository schemas being re-checked against the
+    metaschema (cProfile). The first load of a given file state still goes
+    through the real ``load_schema`` (parse + ``check_schema``); only repeat
+    loads of an unchanged file reuse the result. Instance validation, which is
+    what the documented commands exercise, still runs in full on every call.
+    """
+    stat = Path(path).stat()
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    if key not in _SCHEMA_CACHE:
+        _SCHEMA_CACHE[key] = _REAL_LOAD_SCHEMA(path)
+    return _SCHEMA_CACHE[key]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TUTORIAL = REPO_ROOT / "docs" / "LOCAL_LOOP_TUTORIAL.md"
@@ -111,6 +134,9 @@ class LocalLoopTutorialTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        cls.enterClassContext(
+            mock.patch.object(_local_verifier, "load_schema", _load_schema_checked_once)
+        )
         (REPO_ROOT / "results").mkdir(exist_ok=True)
         cls.scratch = REPO_ROOT / "results" / f"local-loop-tutorial-test-{uuid.uuid4().hex[:8]}"
         cls.scratch.mkdir()

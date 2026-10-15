@@ -65,15 +65,43 @@ _DRIVE_PATH_RE = re.compile(r"^[A-Za-z]:[\\/]")
 
 
 class HelpExamplesTests(unittest.TestCase):
-    def help_text(self, argv):
-        """Render one command's real ``--help`` output via ``build_parser()``."""
-        parser = cli.build_parser()
+    """Parser construction is the dominant cost here, so it is done once.
+
+    ``cli.build_parser()`` is called ~100 times by the checks below if every
+    ``help_text``/``parse_args`` call builds its own (~0.03 CPU-s each, ~7 CPU-s
+    in total against the unit tier's hard CPU budget). Two parsers are built once
+    in ``setUpClass`` and every test shares them. Neither is ever mutated:
+    ``parse_args`` and ``--help`` rendering only read the parser. Parser ``B``
+    exists so ``test_examples_are_deterministic_and_machine_path_free`` still
+    compares the help of two *independently built* parsers (as it did when it
+    built a fresh parser per call) rather than one parser against itself.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.parser = cli.build_parser()
+        cls.second_parser = cli.build_parser()
+        cls._help_cache = {}
+
+    def _render(self, parser, argv):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
             with self.assertRaises(SystemExit) as caught:
                 parser.parse_args([*argv, "--help"])
         self.assertEqual(caught.exception.code, 0)
         return stdout.getvalue()
+
+    def help_text(self, argv, parser=None):
+        """Render one command's real ``--help`` output via ``build_parser()``.
+
+        Rendering is deterministic per (parser, argv) and the result is an
+        immutable ``str``, so it is cached after its first successful render.
+        """
+        parser = self.parser if parser is None else parser
+        key = (id(parser), tuple(argv))
+        if key not in self._help_cache:
+            self._help_cache[key] = self._render(parser, argv)
+        return self._help_cache[key]
 
     def example_lines(self, argv):
         text = self.help_text(argv)
@@ -120,7 +148,7 @@ class HelpExamplesTests(unittest.TestCase):
                 with self.subTest(example=line):
                     tokens = shlex.split(line)
                     self.assertEqual(tokens[0], "idkmesh")
-                    parsed = cli.build_parser().parse_args(tokens[1:])
+                    parsed = self.parser.parse_args(tokens[1:])
                     self.assertEqual(parsed.command, argv[0])
                     if len(argv) == 2:
                         sub_attr = f"{argv[0].replace('-', '_')}_command"
@@ -156,7 +184,7 @@ class HelpExamplesTests(unittest.TestCase):
             first = self.help_text(argv)
             self.assertEqual(
                 first,
-                self.help_text(argv),
+                self.help_text(argv, self.second_parser),
                 f"help for {' '.join(argv)} is not deterministic",
             )
             home = os.path.expanduser("~")
