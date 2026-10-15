@@ -77,7 +77,15 @@ class EvaluateTests(unittest.TestCase):
 class LiveSoakTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.report = soak.soak(requests=24, threads=3, warmup=6, heap_requests=24)
+        # The two tracemalloc-traced rounds dominate this fixture's CPU (about
+        # 0.9 of 1.2 CPU-s at 24 requests each, because tracing slows every
+        # allocation). Twelve per round still sends real concurrent traffic
+        # (3 threads x 4 requests) through the traced path and yields a measured
+        # growth figure that the assertions below check against the ceiling and
+        # against an impossible ceiling; the leak-detection sensitivity of the
+        # tool itself is set by its defaults (300 requests per traced round),
+        # not by this smoke run.
+        cls.report = soak.soak(requests=24, threads=3, warmup=6, heap_requests=12)
 
     def test_every_response_was_correct_and_the_run_passes(self):
         self.assertEqual(self.report["problems"], [])
