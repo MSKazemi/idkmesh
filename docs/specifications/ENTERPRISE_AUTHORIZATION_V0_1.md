@@ -484,6 +484,23 @@ Passing it as `AuditEventInput.evidence_digest` ties the tamper-evident ledger e
 event holds the reason code and digest, not the reason text. `tests/test_enterprise_break_glass.py` drives that
 path through `LocalEnterpriseAuditLedger`.
 
+Operator check. `idkmesh break-glass check --grant PATH [--now-epoch N] [--json]`
+(`idkmesh/enterprise_break_glass_check.py`) validates a stored grant document with the library's own strict
+`parse_break_glass_grant` and reports: whether it is well formed; whether it requests anything no grant may
+cover (`manage_policy` / `audit_export` actions, `owner` / `admin` / `auditor` roles, risk above `high`, data
+class above `confidential`, each with a stable code `action_not_grantable`, `role_not_grantable`,
+`risk_above_ceiling`, `data_class_above_ceiling`, reported together even when the document is also malformed);
+the window status (`within`, `not_yet_valid`, `expired`, or `not_evaluated` when `--now-epoch` is omitted, because
+the verb never reads the clock); and the grant digest. It also refuses a repeated `granted_roles` / `actions`
+member (`duplicate_value`), which the schema forbids with `uniqueItems` but `parse_break_glass_grant` collapses
+into a set before its own uniqueness check. Exit 0: well formed, grantable and not outside its window; 1: refused;
+2 (empty stdout): unreadable, non-JSON, non-object or duplicate-key input, or an invalid flag. The report carries
+`is_authorization: false` and `evaluates_authorization: false` and says plainly that **a valid grant is not an
+authorization**: it never calls `authorize_with_break_glass`, issues, stores, revokes or approves nothing, and
+cannot see the identity revision, policy revision or revocation feed that every real use re-checks. It never
+prints `reason`, unknown keys or unrecognised values (an unknown key is reported at path `$`). Tests:
+`tests/test_break_glass_check_cli.py`.
+
 Honest limits:
 
 - Offline contract and evaluator only. There is no request/approval workflow, grant store, revocation feed or

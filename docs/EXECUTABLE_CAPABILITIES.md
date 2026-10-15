@@ -46,6 +46,8 @@ methods, and every top-level Python module in `idkmesh/`.
 | `idkmesh secret-reference check` | validate the grammar of a secret reference (`env:`, `gh-secret:`, `secret:`, `vault:`) and optionally its compatibility with a profile's secret backend | never resolves a reference, reads an environment variable or vault, or echoes a rejected argument; does not evaluate authorization; exit 0 acceptable, 1 refused with a stable code, 2 on an invalid profile; no workflow runs it |
 | `idkmesh api-network-profile` | network/multi-user API security profile command family (#743) | read-only and offline; starts no listener; the only subcommand is `check` |
 | `idkmesh api-network-profile check` | validate a declared network/multi-user API security profile with the fail-closed `parse_network_profile` before anyone exposes the API (#743); `--explain` lists the checks performed and not performed | reads the one named file only; starts no listener and contacts no proxy, certificate, DNS name or identity provider; resolves no secret and never echoes a value from the file; exit 0 valid, 1 refused with a stable reason code, 2 unreadable or invalid JSON (empty stdout); a valid result is declared input, not a deployment approval; no workflow runs it |
+| `idkmesh break-glass` | validate an E3-E break-glass grant document | read-only; the only subcommand is `check`; issues, stores, revokes and approves nothing |
+| `idkmesh break-glass check` | validate one grant document with the strict E3-E parser: well-formed, requests nothing non-grantable (`manage_policy`, `audit_export`, owner/admin/auditor roles, risk above `high`, data above `confidential`), window status at a caller-supplied `--now-epoch`, grant digest | reads the one named file only; no network, secret, clock read or write; never prints the reason text; exit 0 well formed and grantable, 1 refused with stable reason codes, 2 unusable input; a valid grant is evidence, not an authorization, and the verb evaluates no authorization decision; no workflow runs it |
 | `idkmesh connections` | validate, normalize, persist, and inspect connector metadata | no live dispatch, no raw secret persistence |
 | `idkmesh connections validate` | validate a versioned connector profile | read-only |
 | `idkmesh connections list` | list normalized connector metadata from a profile | read-only |
@@ -258,6 +260,7 @@ name documents implementation presence, not stability as a public Python API.
 - `idkmesh/enterprise_authz.py`
 - `idkmesh/enterprise_authz_cache.py`
 - `idkmesh/enterprise_break_glass.py`
+- `idkmesh/enterprise_break_glass_check.py`
 - `idkmesh/enterprise_conformance.py`
 - `idkmesh/enterprise_data_policy.py`
 - `idkmesh/enterprise_egress_policy.py`

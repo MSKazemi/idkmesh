@@ -753,6 +753,58 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit deterministic machine-readable JSON",
     )
 
+    break_glass = sub.add_parser(
+        "break-glass",
+        help="validate (never issue or store) an E3-E break-glass grant document",
+    )
+    break_glass_sub = break_glass.add_subparsers(
+        dest="break_glass_command", required=True
+    )
+    break_glass_check = break_glass_sub.add_parser(
+        "check",
+        help="check that a break-glass grant document is well formed and grantable",
+        description=(
+            "Validate one stored E3-E break-glass grant document with the "
+            "library's strict validator and report whether it is well formed, "
+            "whether it requests anything no grant may cover (manage_policy, "
+            "audit_export, owner/admin/auditor roles, risk above high, data "
+            "above confidential), whether it is inside its window at "
+            "--now-epoch, and its sha256 digest. A valid grant is NOT an "
+            "authorization: this verb evaluates no authorization decision, "
+            "issues, stores, revokes and approves nothing, reads no clock "
+            "(without --now-epoch the window is reported as not_evaluated), "
+            "makes no network call and never prints the grant's reason text. "
+            "Exit 0: well formed, grantable and not outside its window; exit "
+            "1: refused, with stable reason codes; exit 2: unreadable or "
+            "non-JSON input or invalid flags (stdout stays empty)."
+        ),
+        formatter_class=_ExamplesHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  idkmesh break-glass check --grant grant.json\n"
+            "  idkmesh break-glass check --grant grant.json"
+            " --now-epoch 1791407000 --json"
+        ),
+    )
+    break_glass_check.add_argument(
+        "--grant",
+        required=True,
+        metavar="PATH",
+        help="break-glass grant JSON (schemas/enterprise-break-glass-grant-v0.1.schema.json)",
+    )
+    break_glass_check.add_argument(
+        "--now-epoch",
+        type=int,
+        metavar="N",
+        help="UNIX seconds used for the window check (never read from the clock; omitted means the window is not evaluated)",
+    )
+    break_glass_check.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="emit deterministic machine-readable JSON",
+    )
+
     egress_cmd = sub.add_parser(
         "egress-policy",
         help="check whether a data class may go to a destination under an egress policy",
@@ -4154,6 +4206,43 @@ def _run_api_slo(args: argparse.Namespace) -> int:
     return int(report["exit_code"])
 
 
+def _run_break_glass(args: argparse.Namespace) -> int:
+    """``break-glass check``: validate a grant document; nothing is changed.
+
+    Exit 0 when the grant is well formed, grantable and not outside its
+    window, 1 when refused, 2 when the file or flags are unusable (stdout stays
+    empty then). A passing check is not an authorization.
+    """
+
+    from idkmesh.enterprise_break_glass_check import (
+        check_break_glass_grant_document,
+        render_check_report_json,
+        render_check_report_text,
+    )
+
+    if args.break_glass_command != "check":  # pragma: no cover - argparse guards
+        return _fail("unknown break-glass command")
+    if args.now_epoch is not None and args.now_epoch < 0:
+        return _fail("--now-epoch must be an integer >= 0")
+    try:
+        document = _strict_json_file(args.grant, label="break-glass grant")
+    except ValueError as exc:
+        message = str(exc)
+        if "duplicate JSON key" in message:
+            # The duplicated key is document content; do not echo it.
+            message = f"{args.grant}: invalid strict JSON: duplicate JSON key"
+        return _fail(message)
+    report = check_break_glass_grant_document(
+        document, now_epoch=args.now_epoch
+    )
+    sys.stdout.write(
+        render_check_report_json(report)
+        if args.json_output
+        else render_check_report_text(report)
+    )
+    return 0 if report.ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "control-tower":
@@ -4224,6 +4313,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_secret_reference_check(args)
     if args.command == "api-network-profile":
         return _run_api_network_profile(args)
+    if args.command == "break-glass":
+        return _run_break_glass(args)
     if args.command == "run":
         return _run_product_spine_control(args)
     if args.command == "work-unit":
