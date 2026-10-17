@@ -659,3 +659,9 @@ IDKMesh starts from a simple admission: **we do not yet know the best way to coo
 If you can improve a question, falsify an assumption, reproduce an experiment, write a test, find a security problem, make a contract clearer, reduce reviewer burden, improve onboarding, or build one verified component, you can contribute.
 
 > **From uncertainty to collective intelligence—through evidence.**
+
+<!-- legal-notice: start -->
+### Legal notice and responsible use
+
+The materials in this repository are made available without warranties to the extent permitted by applicable law. **Please read the [Disclaimer and Responsible-Use Notice](DISCLAIMER.md)** before relying on or deploying them. This notice does not change any existing software license or limit rights that cannot legally be waived.
+<!-- legal-notice: end -->
